@@ -1,0 +1,23 @@
+add_library(fabm_models_pisces OBJECT
+            pisces_model_library.F90
+            tracer.F90
+            phytoplankton.F90
+            zooplankton.F90
+            daylength.F90
+            turbocline.F90
+            shear.F90
+            optics.F90
+            carbonate_chemistry.F90
+            oxygen.F90
+            shared.F90
+            remineralization.F90
+            aggregation.F90
+            nitrification.F90
+            iron.F90
+           )
+
+add_dependencies(fabm_models_pisces fabm_base)
+
+#-----------------------------------------------------------------------
+# Copyright (C) 2021 - BB
+#-----------------------------------------------------------------------
