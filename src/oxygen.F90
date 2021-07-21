@@ -80,7 +80,7 @@ contains
          _GET_(self%id_oxy, oxy)
          _SET_DIAGNOSTIC_(self%id_chemo2, solubility(tempis, salinprac))
 
-         ! denitrification factor computed from O2 levels - Jorn: from pzlim.F90
+         ! denitrification factor computed from O2 levels - Jorn: from pzlim.F90, Eq 57
          nitrfac = MAX(  0.e0_rk, 0.4_rk * ( 6.e-6_rk  - oxy )    &
             &                                / ( self%oxymin + oxy )  )
          nitrfac = MIN( 1._rk, nitrfac )

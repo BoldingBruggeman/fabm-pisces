@@ -142,7 +142,7 @@ contains
          _GET_(self%id_cal, cal)
          _GET_(self%id_zomegaca, zomegaca)
 
-         ! Jorn: from p4zlys.F90
+         ! Jorn: from p4zlys.F90, Eq 78, 79
          ! SET DEGREE OF UNDER-/SUPERSATURATION
          excess = 1._rk - zomegaca
          zexcess0 = MAX( 0., excess )
@@ -206,10 +206,10 @@ contains
          zdep     = MAX( hmld, heup_01 )
          zsatur   = MAX( rtrn, ( sio3eq - sil ) / ( sio3eq + rtrn ) )
          zsatur2  = ( 1. + tem / 400.)**37
-         znusil   = 0.225  * ( 1. + tem / 15.) * zsatur + 0.775 * zsatur2 * zsatur**9.25   ! Jorn Eq 52 except for lambda_PSi scale factor, but outer exponent now 9.25 (9 in paper)
+         znusil   = 0.225  * ( 1. + tem / 15.) * zsatur + 0.775 * zsatur2 * zsatur**9.25   ! Jorn Eq 52 except for lambda_PSi scale factor. Outer exponent now 9.25 (9 in paper)
          ! Remineralization rate of BSi depedant on T and saturation
          ! ---------------------------------------------------------
-         zfacsib = self%xsilab / ( 1.0 - self%xsilab ) * EXP( -(self%xsiremlab - self%xsirem )  &  ! labile : non-labile ratio
+         zfacsib = self%xsilab / ( 1.0 - self%xsilab ) * EXP( -(self%xsiremlab - self%xsirem )  &  ! Jorn: labile : non-labile ratio, but otherwise Eq 53a. TODO: use depth integration as in original code because znusil is depth dependent
          &                   * znusil * MAX(0._rk, gdept_n - zdep) / ws )
          zfacsi  = zfacsib / ( 1.0 + zfacsib )                                                     ! convert to labile : total ratio
          zsiremin = ( self%xsiremlab * zfacsi + self%xsirem * ( 1. - zfacsi ) ) * xstep * znusil   ! Jorn: Eq 53b

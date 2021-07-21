@@ -115,7 +115,7 @@ contains
          ! Parameterization from Tagliabue and Voelker (2011)
          ! -------------------------------------------------
          IF( ln_ligvar ) THEN
-            ztotlig =  0.09 * doc * 1E6 + self%ligand * 1E9    ! Jorn: similar to Eq 67
+            ztotlig =  0.09 * doc * 1E6 + self%ligand * 1E9    ! Jorn: Eq 67 (note max operator in that Eq has no effect)
             ztotlig =  MIN( ztotlig, 10. )
          ELSE
            IF( ln_ligand ) THEN  ;   !ztotlig = lgw * 1E9      ! Jonr: TODO
@@ -154,7 +154,7 @@ contains
          zfeequi = zFe3 * 1E-9
          zfecoll = 0.5 * zFeL1 * 1E-9   ! Jorn: Eq 66
          ! precipitation of Fe3+, creation of nanoparticles
-         precip = MAX( 0., ( zFe3 * 1E-9 - fe3sol ) ) * self%kfep * xstep
+         precip = MAX( 0., ( zFe3 * 1E-9 - fe3sol ) ) * self%kfep * xstep   ! Jorn: replaces Eq 62?
          !
          ztrc   = ( poc + goc + cal + gsi ) * 1.e6 
          zdust  = dust / ( self%wdust / rday ) &    ! Jorn: Eq 84, note if .not. ln_dust, dust is (coupled to) 0
@@ -164,8 +164,8 @@ contains
          ELSE
             zxlam  = self%xlam1 * 1.0
          ENDIF
-         zlam1b = 3.e-5 + self%xlamdust * zdust + zxlam * ztrc    ! Jorn: Eq50a
-         zscave = zfeequi * zlam1b * xstep
+         zlam1b = 3.e-5 + self%xlamdust * zdust + zxlam * ztrc    ! Jorn: Eq 50a, note lambda_fe^in is here hardcoded to 3.e-5 (same value as in paper)
+         zscave = zfeequi * zlam1b * xstep                        ! Jorn: Eq 50b
 
          ! Compute the different ratios for scavenging of iron
          ! to later allocate scavenged iron to the different organic pools

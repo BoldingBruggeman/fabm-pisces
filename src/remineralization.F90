@@ -82,7 +82,7 @@ contains
       call self%register_diagnostic_variable(self%id_remin, 'remin', 'mol N L-1 s-1', 'remineralization')
       call self%register_diagnostic_variable(self%id_denit, 'denit', 'mol N L-1 s-1', 'denitrification')
       call self%register_diagnostic_variable(self%id_febact, 'febact', 'mol Fe L-1 s-1', 'bacterial uptake of Fe')
-      call self%register_diagnostic_variable(self%id_blim, 'blim', '-', 'bacterial limitation factor')
+      call self%register_diagnostic_variable(self%id_blim, 'blim', 'mol C L-1', 'effective bacterial biomass for iron uptake')
    end subroutine initialize
 
    subroutine do(self, _ARGUMENTS_DO_)
@@ -165,22 +165,22 @@ contains
 
          zdep = MAX( hmld, heup )
          zdepmin = MIN( 1._rk, zdep / gdept_n )
-         zdepprod = zdepmin**0.273
-         zdepeff  = 0.3_rk * zdepmin**0.3
-         tgfunc = EXP( 0.063913 * tem )  ! Jorn: Eq 4a in PISCES-v2 paper, NB EXP(0.063913) = 1.066 = b_P
+         zdepprod = zdepmin**0.273_rk
+         zdepeff  = 0.3_rk * zdepmin**0.3_rk
+         tgfunc = EXP( 0.063913_rk * tem )  ! Jorn: Eq 4a in PISCES-v2 paper, NB EXP(0.063913) = 1.066 = b_P
 
          ! Bacterial uptake of iron. No iron is available in DOC. So
          ! Bacteries are obliged to take up iron from the water. Some
          ! studies (especially at Papa) have shown this uptake to be significant
          ! ----------------------------------------------------------
-         zbactfer = self%feratb * 0.6_rk / rday * tgfunc * xlimbacl     & ! Jorn: Eq 63, dropped multiplication with rfact2 [time step in seconds]
+         zbactfer = self%feratb * 0.6_rk / rday * tgfunc * xlimbacl     & ! Jorn: Eq 63, mu_P hardcoded to 0.6 (as in paper), but in latest code has evolved to 0.8. Dropped multiplication with rfact2 [time step in seconds]
             &              * fer / ( self%xkferb + fer )    &
             &              * zdepprod * zdepeff * zdepbac
-         _ADD_SOURCE_(self%id_fer, - zbactfer*0.33)
-         _ADD_SOURCE_(self%id_sfe, + zbactfer*0.25)
-         _ADD_SOURCE_(self%id_bfe, + zbactfer*0.08)
-         blim      = xlimbacl  * zdepbac / 1.e-6 * zdepprod
-         _SET_DIAGNOSTIC_(self%id_febact, zbactfer * 0.33)
+         _ADD_SOURCE_(self%id_fer, - zbactfer*0.33_rk)
+         _ADD_SOURCE_(self%id_sfe, + zbactfer*0.25_rk)
+         _ADD_SOURCE_(self%id_bfe, + zbactfer*0.08_rk)
+         blim      = xlimbacl  * zdepbac / 1.e-6_rk * zdepprod
+         _SET_DIAGNOSTIC_(self%id_febact, zbactfer * 0.33_rk)
          _SET_DIAGNOSTIC_(self%id_blim, blim)
 
       _LOOP_END_
