@@ -76,8 +76,8 @@ contains
          _GET_(self%id_etot_ndcy, etot_ndcy)
          _GET_SURFACE_(self%id_fr_i, fr_i)
 
-         zlight  =  ( 1.- EXP( -etot_ndcy / self%diazolight ) ) * ( 1. - fr_i )  ! Jorn: Eq 58b, should etot_ndcy be for ice-free water?
-         zsoufer = zlight * 2E-11 / ( 2E-11 + biron )
+         zlight  =  ( 1.- EXP( -etot_ndcy / self%diazolight ) ) * ( 1. - fr_i )  ! Jorn: Eq 58b last term. TODO: should etot_ndcy be for ice-free water?
+         zsoufer = zlight * 2E-11 / ( 2E-11 + biron )                            ! Jorn: ???
 
          !                      ! Potential nitrogen fixation dependant on temperature and iron
          zmudia = MAX( 0.,-0.001096*ztemp**2 + 0.057*ztemp -0.637 ) * 7.625
@@ -87,10 +87,10 @@ contains
          zlim = ( 1.- xdiano3 - xdianh4 )
          IF( zlim <= 0.1 )   zlim = 0.01
          zfact = zlim   ! Jorn : dropped multiplication with rfact2 [time step in seconds]
-         ztrfer = biron / ( self%concfediaz + biron )
-         ztrpo4 = po4 / ( 1E-6 + po4 )
+         ztrfer = biron / ( self%concfediaz + biron ) ! Jorn: Eq 58b iron limitation
+         ztrpo4 = po4 / ( 1E-6 + po4 )                ! Jorn: Eq 58b phosphate limitation. Half-saturation hardcoded to 1 umol C L-1
          ztrdp = ztrpo4
-         nitrpot =  zmudia * r1_rday * zfact * MIN( ztrfer, ztrdp ) * zlight
+         nitrpot =  zmudia * r1_rday * zfact * MIN( ztrfer, ztrdp ) * zlight  ! Jorn: Eq 58b
 
          zfact = nitrpot * self%nitrfix
          _ADD_SOURCE_(self%id_nh4, + zfact / 3.0)
