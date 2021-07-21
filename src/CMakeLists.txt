@@ -13,6 +13,7 @@ add_library(fabm_models_pisces OBJECT
             remineralization.F90
             aggregation.F90
             nitrification.F90
+            nitrogen_fixation.F90
             iron.F90
            )
 
