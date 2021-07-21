@@ -11,11 +11,13 @@ module pisces_carbonate_chemistry
    type, extends(type_base_model), public :: type_pisces_carbonate_chemistry
       type (type_state_variable_id) :: id_dic
       type (type_state_variable_id) :: id_tal
-      type (type_dependency_id) :: id_tempis, id_salinprac, id_rhop, id_sil, id_po4, id_zpres
-      type (type_diagnostic_variable_id) :: id_ph, id_hi, id_CO3sat, id_zomegaca
+      type (type_dependency_id) :: id_tempis, id_salinprac, id_rhop, id_sil, id_po4, id_zpres, id_h2co3
+      type (type_surface_dependency_id) :: id_wndm, id_fr_i, id_patm, id_satmco2
+      type (type_diagnostic_variable_id) :: id_ph, id_hi, id_CO3sat, id_zomegaca, id_zh2co3
    contains
       procedure :: initialize
       procedure :: do
+      procedure :: do_surface
    end type
 
    REAL(rk), PARAMETER :: pp_rdel_ah_target = 1.E-4_rk
@@ -102,13 +104,19 @@ contains
       call self%register_diagnostic_variable(self%id_hi, 'hi', 'mol L-1', 'hydrogen ion concentration')
       call self%register_diagnostic_variable(self%id_CO3sat, 'CO3sat', 'mol L-1', 'CO3 saturation')
       call self%register_diagnostic_variable(self%id_zomegaca, 'zomegaca', '1', 'CaCO3 saturation state', standard_variable=calcite_saturation_state)
+      call self%register_diagnostic_variable(self%id_zh2co3, 'zh2co3', 'mol L-1', 'carbonic acid concentration')
 
       call self%register_dependency(self%id_tempis, standard_variables%temperature) ! TODO should be in-situ temperature (as opposed to conservative/potential)
       call self%register_dependency(self%id_salinprac, standard_variables%practical_salinity)
+      call self%register_dependency(self%id_wndm, standard_variables%wind_speed)
+      call self%register_dependency(self%id_fr_i, standard_variables%ice_area_fraction)
+      call self%register_dependency(self%id_patm, standard_variables%surface_air_pressure)
       call self%register_dependency(self%id_rhop, standard_variables%density)
       call self%register_dependency(self%id_zpres, standard_variables%pressure)
       call self%register_dependency(self%id_po4, 'po4', 'mol C L-1', 'phosphate')
       call self%register_dependency(self%id_sil, 'sil', 'mol Si L-1', 'silicate')
+      call self%register_dependency(self%id_satmco2,standard_variables%mole_fraction_of_carbon_dioxide_in_air)
+      call self%register_dependency(self%id_h2co3, 'zh2co3', 'mol L-1', 'carbonic acid concentration')
    end subroutine initialize
 
    subroutine do(self, _ARGUMENTS_DO_)
@@ -116,7 +124,7 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
       real(rk) :: tempis, salinprac, rhop, dic, tal, po4, sil
-      real(rk) :: ztkel, zt, zsal, zcek1, chemc(3)
+      real(rk) :: ztkel, zt, zsal, zcek1
       real(rk) :: zplat, zc1, zpres, zsqrt, zsal15, zlogt, ztr, zis, zis2, zisqrt, ztc
       real(rk) :: zcl, zst, zft, zcks, zckf, zckb
       real(rk) :: zck1, zck2, zckw, zck1p, zck2p, zck3p, zcksi, zaksp0
@@ -126,7 +134,7 @@ contains
       real(rk) :: zbuf1, zbuf2, ak13, ak23, akb3, akw3, aks3, akf3, ak1p3, ak2p3, ak3p3, aksi3
       real(rk) :: aksp, borat, sulfat, fluorid
       real(rk) :: p_hini, zhi, hi
-      real(rk) :: zco3, zcalcon, zfact, zomegaca, zco3sat
+      real(rk) :: zph, zh2co3, zco3, zcalcon, zfact, zomegaca, zco3sat
 
       _LOOP_BEGIN_
          _GET_(self%id_tempis, tempis)        ! in-situ temperature (TODO! currently this is the "native" temperature from the physical model, which could be conservative or potential)
@@ -139,16 +147,8 @@ contains
          _GET_(self%id_po4, po4)              ! phosphate (in carbon units! mol C L-1)
 
          !                             ! SET ABSOLUTE TEMPERATURE
-         ztkel = tempis + 273.15
-         zt    = ztkel * 0.01
+         ztkel = tempis + 273.15_rk
          zsal  = salinprac !(ji,jj,1) + ( 1.- tmask(ji,jj,1) ) * 35.
-         !                             ! LN(K0) OF SOLUBILITY OF CO2 (EQ. 12, WEISS, 1980)
-         !                             !     AND FOR THE ATMOSPHERE FOR NON IDEAL GAS
-         zcek1 = 9345.17/ztkel - 60.2409 + 23.3585 * LOG(zt) + zsal*(0.023517 - 0.00023656*ztkel    &
-         &       + 0.0047036e-4*ztkel**2)
-         chemc(1) = EXP( zcek1 ) * 1E-6 * rhop / 1000. ! mol/(L atm)
-         chemc(2) = -1636.75 + 12.0408*ztkel - 0.0327957*ztkel**2 + 0.0000316528*ztkel**3
-         chemc(3) = 57.7 - 0.118*ztkel
 
          zpres = zpres / 10.0 - 1.   ! Jorn: dbar -> bar from p4zchem.F90, added -1 because approximate pressure there equals 0 at 0 depth
 
@@ -341,16 +341,91 @@ contains
          zco3 = dic * ak13 * ak23 / (zhi**2   &
             &             + ak13 * zhi + ak13 * ak23 + rtrn )
 
+         zfact    = rhop / 1000._rk
+
+         ! from p4zflx.F90
+         zph   = MAX( hi, 1.e-10 ) / zfact
+         zh2co3 = dic/(1. + ak13/zph + ak13*ak23/zph**2)
+         _SET_DIAGNOSTIC_(self%id_zh2co3, zh2co3)
+
          ! DEVIATION OF [CO3--] FROM SATURATION VALUE
          ! Salinity dependance in zomegaca and divide by rhop/1000 to have good units
          ! Jorn: from p4zlys.F90, we do this here so we do not need to export zco3 (or its constituents) and aksp
          zcalcon  = calcon * ( salinprac / 35._rk )
-         zfact    = rhop / 1000._rk
          zomegaca = ( zcalcon * zco3 ) / ( aksp * zfact + rtrn )
          zco3sat = aksp * zfact / ( zcalcon + rtrn )
          _SET_DIAGNOSTIC_(self%id_CO3sat, zco3sat)    ! from p4zlys.F90
          _SET_DIAGNOSTIC_(self%id_zomegaca, zomegaca)
       _LOOP_END_
+   end subroutine
+
+   subroutine do_surface(self, _ARGUMENTS_DO_SURFACE_)
+      class (type_pisces_carbonate_chemistry), intent(in) :: self
+      _DECLARE_ARGUMENTS_DO_SURFACE_
+
+      real(rk) :: dic, tal, tempis, salinprac, rhop, wndm, fr_i, patm, satmco2, zh2co3
+      real(rk) :: ztkel, zt, zsal, zcek1, chemc(3), ztc, ztc2, ztc3, ztc4, zsch_co2, zws, zkgwan, zkgco2
+      real(rk) :: zvapsw, zpco2atm, zxc2, zfugcoeff, zfco2, zfld, zflu, oce_co2
+
+      real(rk), parameter ::   xconv  = 0.01_rk / 3600._rk   !: coefficients for conversion 
+      real(rk), parameter ::   atm_per_pa = 1._rk / 101325._rk
+
+      _SURFACE_LOOP_BEGIN_
+         _GET_(self%id_dic, dic)
+         _GET_(self%id_tal, tal)
+         _GET_(self%id_tempis, tempis)          ! temperature (degrees Celsius)
+         _GET_(self%id_salinprac, salinprac)    ! practical salinity
+         _GET_(self%id_rhop, rhop)              ! density (kg m-3)
+         _GET_(self%id_h2co3, zh2co3)           ! carbonic acid concentration (mol L-1)
+         _GET_SURFACE_(self%id_wndm, wndm)      ! wind speed (m/s)
+         _GET_SURFACE_(self%id_fr_i, fr_i)      ! ice area fraction (1)
+         _GET_SURFACE_(self%id_patm, patm)      ! atmospheric pressure (Pa)
+         _GET_SURFACE_(self%id_satmco2, satmco2)  ! atmospheric pCO2 (ppm)
+         patm = patm * atm_per_pa                 ! convert atmospheric pressure from Pa to atm
+
+         ztkel = tempis + 273.15_rk
+         zt    = ztkel * 0.01
+         zsal  = salinprac !(ji,jj,1) + ( 1.- tmask(ji,jj,1) ) * 35.
+         !                             ! LN(K0) OF SOLUBILITY OF CO2 (EQ. 12, WEISS, 1980)
+         !                             !     AND FOR THE ATMOSPHERE FOR NON IDEAL GAS
+         zcek1 = 9345.17/ztkel - 60.2409 + 23.3585 * LOG(zt) + zsal*(0.023517 - 0.00023656*ztkel    &
+         &       + 0.0047036e-4*ztkel**2)
+
+         chemc(1) = EXP( zcek1 ) * 1E-6 * rhop / 1000. ! mol/(L atm)
+         chemc(2) = -1636.75 + 12.0408*ztkel - 0.0327957*ztkel**2 + 0.0000316528*ztkel**3
+         chemc(3) = 57.7 - 0.118*ztkel
+
+         ztc  = MIN( 35._rk, tempis )
+         ztc2 = ztc * ztc
+         ztc3 = ztc * ztc2 
+         ztc4 = ztc2 * ztc2
+
+         ! Compute the schmidt Number
+         zsch_co2 = 2116.8_rk - 136.25_rk * ztc + 4.7353_rk * ztc2 - 0.092307_rk * ztc3 + 0.0007555_rk * ztc4
+
+         !  wind speed 
+         zws  = wndm * wndm
+
+         ! Compute the piston velocity for O2 and CO2
+         zkgwan = 0.251_rk * zws
+         zkgwan = zkgwan * xconv * ( 1._rk - fr_i )
+
+         zkgco2 = zkgwan * SQRT( 660._rk / zsch_co2 )
+
+         zvapsw    = EXP(24.4543 - 67.4509*(100.0/ztkel) - 4.8489*LOG(ztkel/100) - 0.000544*zsal)   ! Jorn: water vapour pressure (atm)
+         zpco2atm = satmco2 * ( patm - zvapsw )
+         zxc2      = ( 1.0 - zpco2atm * 1E-6 )**2
+         zfugcoeff = EXP( patm * (chemc(2) + 2.0 * zxc2 * chemc(3) )   &
+         &           / ( 82.05736 * ztkel ))
+         zfco2 = zpco2atm * zfugcoeff
+
+         ! Compute CO2 flux for the sea and air
+         zfld = zfco2 * chemc(1) * zkgco2  ! (mol/L) * (m/s)
+         zflu = zh2co3 * zkgco2                                   ! (mol/L) (m/s) ?
+         oce_co2 = ( zfld - zflu ) !* tmask(ji,jj,1) 
+         ! compute the trend
+         _ADD_SURFACE_FLUX_(self%id_dic, oce_co2)
+      _SURFACE_LOOP_END_
    end subroutine
 
    elemental SUBROUTINE solve_at_general( rhop, dic, tal, po4, sil, borat, sulfat, fluorid, &
