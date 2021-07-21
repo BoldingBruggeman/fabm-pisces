@@ -15,6 +15,7 @@ module pisces_model_library
    use pisces_aggregation
    use pisces_iron
    use pisces_nitrification
+   use pisces_nitrogen_fixation
 
    implicit none
 
@@ -47,6 +48,7 @@ contains
          case ('remineralization');    allocate(type_pisces_remineralization::model)
          case ('aggregation');         allocate(type_pisces_aggregation::model)
          case ('nitrification');       allocate(type_pisces_nitrification::model)
+         case ('nitrogen_fixation');   allocate(type_pisces_nitrogen_fixation::model)
          case ('iron');                allocate(type_pisces_iron::model)
          ! Add new models here
          case default
