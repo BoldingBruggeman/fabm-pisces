@@ -13,12 +13,15 @@ module pisces_oxygen
       type (type_surface_dependency_id) :: id_wndm, id_fr_i, id_patm
       type (type_state_variable_id) :: id_oxy
       type (type_diagnostic_variable_id) :: id_chemo2, id_nitrfac
+      type (type_surface_diagnostic_variable_id) :: id_Oflx, id_Dpo2
       real(rk) :: oxymin
    contains
       procedure :: initialize
       procedure :: do
       procedure :: do_surface
    end type
+
+   real(rk), parameter ::   atcox  = 0.20946_rk         ! units atm
 
 contains
 
@@ -31,6 +34,8 @@ contains
       call self%register_state_variable(self%id_oxy, 'O2', 'mol O2 L-1', 'concentration', initial_value=2.47e-4_rk)
       call self%register_diagnostic_variable(self%id_chemo2, 'chemo2', 'mol O2 (L atm)-1', 'solubility')
       call self%register_diagnostic_variable(self%id_nitrfac, 'nitrfac', '1', 'denitrication factor')
+      call self%register_diagnostic_variable(self%id_Oflx, 'Oflx', 'mol m-2 s-1', 'air-sea O2 flux')
+      call self%register_diagnostic_variable(self%id_Dpo2, 'Dpo2', 'uatm', 'delta pO2')
 
       call self%register_dependency(self%id_tempis, standard_variables%temperature) ! should be in-situ temperature (as opposed to conservative/potential)
       call self%register_dependency(self%id_salinprac, standard_variables%practical_salinity)
@@ -44,7 +49,6 @@ contains
       real(rk), intent(in) :: tempis, salinprac
       real(rk) :: chemo2
 
-      real(rk), parameter ::   atcox  = 0.20946_rk         ! units atm
       real(rk), parameter ::   o2atm  = 1._rk / ( 1000._rk * 0.20946_rk )
       real(rk), parameter ::   oxyco  = 1._rk / 22.4144_rk  ! converts from liters of an ideal gas to moles
                                                             ! coeff. for seawater pressure correction : millero 95
@@ -131,6 +135,8 @@ contains
          zoflx = ( zfld16 - zflu16 )
 
          _ADD_SURFACE_FLUX_(self%id_oxy, zoflx)
+         _SET_SURFACE_DIAGNOSTIC_(self%id_Oflx, zoflx * 1000._rk)
+         _SET_SURFACE_DIAGNOSTIC_(self%id_Dpo2, atcox * atm_per_pa * patm - atcox * oxy / ( chemo2 + rtrn ) )
       _SURFACE_LOOP_END_
    end subroutine
 

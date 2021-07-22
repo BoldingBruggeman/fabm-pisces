@@ -14,6 +14,7 @@ module pisces_carbonate_chemistry
       type (type_dependency_id) :: id_tempis, id_salinprac, id_rhop, id_sil, id_po4, id_zpres, id_h2co3
       type (type_surface_dependency_id) :: id_wndm, id_fr_i, id_patm, id_satmco2
       type (type_diagnostic_variable_id) :: id_ph, id_hi, id_CO3sat, id_zomegaca, id_zh2co3
+      type (type_surface_diagnostic_variable_id) :: id_Cflx, id_Kg, id_Dpco2, id_pCO2sea
    contains
       procedure :: initialize
       procedure :: do
@@ -105,6 +106,11 @@ contains
       call self%register_diagnostic_variable(self%id_CO3sat, 'CO3sat', 'mol L-1', 'CO3 saturation')
       call self%register_diagnostic_variable(self%id_zomegaca, 'zomegaca', '1', 'CaCO3 saturation state', standard_variable=calcite_saturation_state)
       call self%register_diagnostic_variable(self%id_zh2co3, 'zh2co3', 'mol L-1', 'carbonic acid concentration')
+
+      call self%register_diagnostic_variable(self%id_Cflx, 'Cflx', 'mol m-2 s-1', 'air-sea CO2 flux')
+      call self%register_diagnostic_variable(self%id_Kg, 'Kg', 'm s-1', 'gas transfer velocity')
+      call self%register_diagnostic_variable(self%id_Dpco2, 'Dpco2', 'uatm', 'delta pCO2')
+      call self%register_diagnostic_variable(self%id_pCO2sea, 'pCO2sea', 'uatm', 'surface ocean pCO2')
 
       call self%register_dependency(self%id_tempis, standard_variables%temperature) ! TODO should be in-situ temperature (as opposed to conservative/potential)
       call self%register_dependency(self%id_salinprac, standard_variables%practical_salinity)
@@ -425,6 +431,11 @@ contains
          oce_co2 = ( zfld - zflu ) !* tmask(ji,jj,1) 
          ! compute the trend
          _ADD_SURFACE_FLUX_(self%id_dic, oce_co2)
+
+         _SET_SURFACE_DIAGNOSTIC_(self%id_Cflx, oce_co2 * 1000._rk)
+         _SET_SURFACE_DIAGNOSTIC_(self%id_Kg, zkgco2)
+         _SET_SURFACE_DIAGNOSTIC_(self%id_Dpco2, zpco2atm - zh2co3 / (chemc(1) + rtrn))
+         _SET_SURFACE_DIAGNOSTIC_(self%id_pCO2sea, zh2co3 / (chemc(1) + rtrn))
       _SURFACE_LOOP_END_
    end subroutine
 
