@@ -14,6 +14,10 @@ For instance, to use PISCES with the [General Ocean Turbulence Model (GOTM)](htt
 cmake <GOTMDIR> -DFABM_INSTITUTES=pisces -DFABM_PISCES_BASE=<PISCESDIR>
 ```
 
+## How to run a FABM-PISCES simulation
+
+A `fabm.yaml` file with the PISCES configuration is provided under `<PISCESDIR>/testcases`. You can drop this file in the working directory of a FABM-compatible model such as GOTM to use it during simulation. Note that for GOTM, you will need also need to ensure that `fabm/use` is set to `true` in `gotm.yaml`. Otherwise GOTM would run with physics only.
+
 ## To do
 
 * hook up POC lability parameterization (`p4zpoc.F90`) to consumption and produciton terms (currently zero)
