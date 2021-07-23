@@ -52,6 +52,9 @@ contains
       ! aggregation
       call self%get_parameter(self%solgoc, 'solgoc', '-', 'fraction broken down to smaller POM', default=0.04_rk/ 2.56 * 1./ ( 1.-50**(-0.04) ))
       call self%get_parameter(lability%mlvar, 'mlvar', '-', 'lability varies in mixing layer', default=.false.)
+      call self%get_parameter(lability%xremip, 'xremip', '-', 'remineralisation rate', default=0.035_rk)
+      call self%get_parameter(lability%jcpoc, 'jcpoc', '', 'number of lability classes', default=15)
+      call self%get_parameter(lability%rshape, 'rshape', '-', 'shape of the gamma function', default=1._rk)
 
       call self%register_state_dependency(self%id_c, 'c', 'mol C L-1', 'particulate organic carbon')
       call self%register_state_dependency(self%id_fe, 'fe', 'mol C L-1', 'particulate organic carbon')
@@ -103,10 +106,6 @@ contains
 
       integer :: jn, ifault
       real(rk) :: remindelta, reminup, remindown
-
-      call self%get_parameter(self%xremip, 'xremip', '-', 'remineralisation rate', default=0.035_rk)
-      call self%get_parameter(self%jcpoc, 'jcpoc', '', 'number of lability classes', default=15)
-      call self%get_parameter(self%rshape, 'rshape', '-', 'shape of the gamma function', default=1._rk)
 
       call self%register_diagnostic_variable(self%id_zremi, 'zremi', 's-1', 'remineralization rate', source=source_do_column)
 
