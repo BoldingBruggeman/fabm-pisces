@@ -184,6 +184,7 @@ instances:
       mzrat: 0.03
       resrat: 0.005
       part: 0.75
+      xsizedia: 0
     initialization:
       c: 3.44e-7
     coupling:
