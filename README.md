@@ -16,7 +16,7 @@ cmake <GOTMDIR> -DFABM_INSTITUTES=pisces -DFABM_PISCES_BASE=<PISCESDIR>
 
 ## To do
 
-* POC lability, disaggregation (`p4zpoc.F90`)
+* hook up POC lability parameterization (`p4zpoc.F90`) to consumption and produciton terms (currently zero)
 * source of iron due to sea ice melt (`p4zsed.F90`, `ln_ironice`)
 * silicate, phosphate, iron input due to dust (`p4zsed.F90`, `ln_dust`) [NB river inputs `ln_river`, nitrogen deposition `ln_ndepo` to be handled at TOP-FABM level]
 * iron input from hydrothermal vents - TOP-FABM or in PISCES code? (`p4zsed.F90`, `ln_hydrofe`)

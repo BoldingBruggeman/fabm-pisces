@@ -10,7 +10,8 @@ add_library(fabm_models_pisces OBJECT
             carbonate_chemistry.F90
             oxygen.F90
             shared.F90
-            remineralization.F90
+            dom_remineralization.F90
+            pom_remineralization.F90
             aggregation.F90
             nitrification.F90
             nitrogen_fixation.F90

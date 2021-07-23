@@ -1,6 +1,6 @@
 #include "fabm_driver.h"
 
-module pisces_remineralization
+module pisces_dom_remineralization
    use fabm_types
    use pisces_shared
 
@@ -8,7 +8,7 @@ module pisces_remineralization
 
    private
 
-   type, extends(type_base_model), public :: type_pisces_remineralization
+   type, extends(type_base_model), public :: type_pisces_dom_remineralization
       type (type_state_variable_id) :: id_no3, id_nh4, id_po4, id_fer, id_doc, id_oxy, id_dic, id_tal, id_sfe, id_bfe
       type (type_dependency_id) :: id_zoo, id_mes, id_gdept_n, id_tem
       type (type_surface_dependency_id) :: id_hmld, id_heup
@@ -37,8 +37,8 @@ module pisces_remineralization
 contains
 
    subroutine initialize(self, configunit)
-      class (type_pisces_remineralization), intent(inout), target :: self
-      integer,                              intent(in)            :: configunit
+      class (type_pisces_dom_remineralization), intent(inout), target :: self
+      integer,                                  intent(in)            :: configunit
 
       class (type_pisces_bacteria), pointer :: pbacteria
 
@@ -82,11 +82,11 @@ contains
       call self%register_diagnostic_variable(self%id_remin, 'remin', 'mol N L-1 s-1', 'remineralization')
       call self%register_diagnostic_variable(self%id_denit, 'denit', 'mol N L-1 s-1', 'denitrification')
       call self%register_diagnostic_variable(self%id_febact, 'febact', 'mol Fe L-1 s-1', 'bacterial uptake of Fe')
-      call self%register_diagnostic_variable(self%id_blim, 'blim', 'mol C L-1', 'effective bacterial biomass for iron uptake')
+      call self%register_diagnostic_variable(self%id_blim, 'blim', 'umol C L-1', 'effective bacterial biomass for iron uptake')
    end subroutine initialize
 
    subroutine do(self, _ARGUMENTS_DO_)
-      class (type_pisces_remineralization), intent(in) :: self
+      class (type_pisces_dom_remineralization), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
       real(rk) :: no3, nh4, po4, fer, doc, oxy
