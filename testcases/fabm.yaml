@@ -234,20 +234,6 @@ instances:
       pom: pom
       gom: gom
       etot_ndcy: optics/etot_ndcy
-  ice:
-    model: surface_constant
-    parameters:
-      standard_name: ice_area_fraction
-      value: 0
-  si_max:
-    model: surface_constant
-    parameters:
-      value: 1.07e-7
-  pco2:
-    model: surface_constant
-    parameters:
-      standard_name: mole_fraction_of_carbon_dioxide_in_air
-      value: 350.
   pom_rem:
     model: pisces/pom_remineralization
     parameters:
@@ -285,4 +271,22 @@ instances:
       dom: dom
       pom: pom
       gom: gom
-    
+  pco2:
+    model: surface_constant
+    parameters:
+      standard_name: mole_fraction_of_carbon_dioxide_in_air
+      value: 350.
+  si_max:
+    model: surface_constant
+    parameters:
+      value: 1.07e-7
+  ice:
+    model: surface_constant
+    parameters:
+      standard_name: ice_area_fraction
+      value: 0
+  avt:
+    model: interior_constant
+    parameters:
+      standard_name: vertical_diffusivity
+      value: 1e-6
