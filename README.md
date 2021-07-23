@@ -40,6 +40,7 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 
 * diazotroph temperature dependence and NO3/NH4 limitation (`p4zsed.F90`) appear to have functionally different forms from those given in the paper
 * threshold for diazotroph limitation is 0.8 in paper, 0.9 in code (`p4zsed.F90`)
+* phytoplankton maximum growth rate [its reference value at 0 degrees Celsius] is 0.6 d-1 in paper, 0.8 d-1 in code.
 * particulate organic mater (POC, GOC) remineralisation is now depth-dependent and calculated using a configurable number of lability classes (`p4zpoc.F90`)
 * ...
 
