@@ -6,7 +6,7 @@ This is a [FABM](https://fabm.net) port of [the PISCES model](https://doi.org/10
 
 This code must be compiled together with FABM. To do this, provide the following additional arguments to cmake [when you build FABM](https://github.com/fabm-model/fabm/wiki/Building-and-installing): `-DFABM_INSTITUTES=pisces -DFABM_PISCES_BASE=<PISCESDIR>`
 
-Here, `<PISCESDIR>` is the directory that with the FABM-PISCES code (the same directory that contains this readme file). Note that `-DFABM_INSTITUTES=pisces` will make FABM compile PISCES as the *only* avaialblke biogoechemical model. If you additionally want to have access to other biogeochemcial modls included with FABM, you can set `FABM_INSTITUTES` to a semi-colon separated list, e.g., `-DFABM_INSTITUTES=pisces;ersem`.
+Here, `<PISCESDIR>` is the directory that with the FABM-PISCES code (the same directory that contains this readme file). Note that `-DFABM_INSTITUTES=pisces` will make FABM compile PISCES as the *only* available biogeochemical model. If you additionally want to have access to other biogeochemical models included with FABM, you can set `FABM_INSTITUTES` to a semi-colon separated list, e.g., `-DFABM_INSTITUTES="pisces;ersem"` (to prevent the shell from interpreting the semi-colons, you typically have to enclose this list with quotes).
 
 For instance, to use PISCES with the [General Ocean Turbulence Model (GOTM)](https://gotm.net/), follow [these instructions](https://github.com/fabm-model/fabm/wiki/GOTM), but in the cmake step, replace `cmake <GOTMDIR>` with:
 
@@ -17,16 +17,16 @@ cmake <GOTMDIR> -DFABM_INSTITUTES=pisces -DFABM_PISCES_BASE=<PISCESDIR>
 ## To do
 
 * hook up POC lability parameterization (`p4zpoc.F90`) to consumption and produciton terms (currently zero)
-* source of iron due to sea ice melt (`p4zsed.F90`, `ln_ironice`)
-* silicate, phosphate, iron input due to dust (`p4zsed.F90`, `ln_dust`) [NB river inputs `ln_river`, nitrogen deposition `ln_ndepo` to be handled at TOP-FABM level]
-* iron input from hydrothermal vents - implement in TOP-FABM or in PISCES code? (`p4zsed.F90`, `ln_hydrofe`)
-* sediment denitrification (`p4zsed.F90`)
-* bottom fluxes for sinking matter (`p4zsed.F90`)
+* add source of iron due to sea ice melt (`p4zsed.F90`, `ln_ironice`)
+* add silicate, phosphate, iron input due to dust (`p4zsed.F90`, `ln_dust`) [NB river inputs `ln_river`, nitrogen deposition `ln_ndepo` to be handled at TOP-FABM level]
+* add iron input from hydrothermal vents - implement in TOP-FABM or in PISCES code? (`p4zsed.F90`, `ln_hydrofe`)
+* add sediment denitrification (`p4zsed.F90`)
+* add bottom fluxes for sinking matter (`p4zsed.F90`)
 * The annual maximum silicate concentration at the surface is currently set in `fabm.yaml`. FABM will need minor changes to compute it on the fly as in `p4zint.F90`.
 * The turbocline depth (mixing layer depth) is currently hardcoded at 10 m in src/turbocline.F90. It should be computed dynamically, but for that, FABM and GOTM need tweaks to pass the turbulent diffusivity.
 * much of the chemistry code (`p4zche.F90` in the original code) uses in-situ temperature. For the moment we substitute the native temperature provided by the host (hydrodynamic model), which often is potential or absolute temperature.
 * support for an iron ligand tracer (`lk_ligand`, `p4z_ligand.F90`) is currently not implemented.
-* improved initial estimate for H+ with ahini_for_at (`p4zche.F90`)
+* use improved initial estimate for H+ with ahini_for_at (`p4zche.F90`)
 * check light fields: Are they for horizontal average of entire grid cell, or ice-free section only? What do the various processes expect?
 * correct silicate dissolution (use vertical integral as in `p4zrem.F90`)
 
@@ -36,6 +36,7 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 
 * diazotroph temperature dependence and NO3/NH4 limitation (`p4zsed.F90`) appear to have functionally different forms from those given in the paper
 * threshold for diazotroph limitation is 0.8 in paper, 0.9 in code (`p4zsed.F90`)
+* particulate organic mater (POC, GOC) remineralisation is now depth-dependent and calculated using a configurable number of lability classes (`p4zpoc.F90`)
 * ...
 
 ## Questions to PISCES authors
