@@ -252,6 +252,7 @@ instances:
     model: pisces/pom_remineralization
     parameters:
       solgoc: 0
+      mlvar: true
     coupling:
       pom: pom
       dom: dom
