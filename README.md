@@ -19,12 +19,12 @@ cmake <GOTMDIR> -DFABM_INSTITUTES=pisces -DFABM_PISCES_BASE=<PISCESDIR>
 * hook up POC lability parameterization (`p4zpoc.F90`) to consumption and produciton terms (currently zero)
 * source of iron due to sea ice melt (`p4zsed.F90`, `ln_ironice`)
 * silicate, phosphate, iron input due to dust (`p4zsed.F90`, `ln_dust`) [NB river inputs `ln_river`, nitrogen deposition `ln_ndepo` to be handled at TOP-FABM level]
-* iron input from hydrothermal vents - TOP-FABM or in PISCES code? (`p4zsed.F90`, `ln_hydrofe`)
+* iron input from hydrothermal vents - implement in TOP-FABM or in PISCES code? (`p4zsed.F90`, `ln_hydrofe`)
 * sediment denitrification (`p4zsed.F90`)
 * bottom fluxes for sinking matter (`p4zsed.F90`)
 * The annual maximum silicate concentration at the surface is currently set in `fabm.yaml`. FABM will need minor changes to compute it on the fly as in `p4zint.F90`.
-* The turbocline depth (mixing layer depth) is currently hardcoded at 10 m in src/turbocline.F90. It will ultimately be computed dynamically, but for that, FABM and GOTM need tweaks to pass the turbulent diffusivity.
-* much of the chemistry code (`p4zche.F90` in the original code) uses in-situ emeorature. For the moment we substitute the native temperature provided by the host (hydrodynamic model), which often is potential or absolute temperature.
+* The turbocline depth (mixing layer depth) is currently hardcoded at 10 m in src/turbocline.F90. It should be computed dynamically, but for that, FABM and GOTM need tweaks to pass the turbulent diffusivity.
+* much of the chemistry code (`p4zche.F90` in the original code) uses in-situ temperature. For the moment we substitute the native temperature provided by the host (hydrodynamic model), which often is potential or absolute temperature.
 * support for an iron ligand tracer (`lk_ligand`, `p4z_ligand.F90`) is currently not implemented.
 * improved initial estimate for H+ with ahini_for_at (`p4zche.F90`)
 * check light fields: Are they for horizontal average of entire grid cell, or ice-free section only? What do the various processes expect?
@@ -52,3 +52,4 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 ```
 * Bacterial uptake of iron in `p4zrem.F90` uses a hardcoded maximum phytoplankton growth rate of 0.6 d-1 (at 0 degrees Celsius). That matches the paper, but not the latest PISCES code, in which this constant has been replaced by 0.8 d-1. Should the bacterial uptake constant not be replaced too?
 *  What is the unit of zpres in `p4zche.F90`?  L248 seems to convert from dbar to bar, but comments on L345-354 suggest dbar is needed. (Asked Olivier Aumont 19 July 2021)
+* why the different treatment of POC and GOC disaggregation in the mixed layer (`p4zpoc.F90`)? Is that because the sinking rate of POC is constant, whereas the sinking of GOC is (potentially) depth-dependent?
