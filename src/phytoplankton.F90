@@ -141,7 +141,7 @@ contains
 
       call self%register_dependency(self%id_tem, standard_variables%temperature)
       call self%register_dependency(self%id_zstrn, 'zstrn', 'h', 'day length')
-      call self%register_dependency(self%id_hmld, turbocline_depth)
+      call self%register_dependency(self%id_hmld, mixed_layer_thickness_defined_by_vertical_tracer_diffusivity)
       call self%register_dependency(self%id_xdiss, shear_rate)
       call self%register_dependency(self%id_heup_01, 'heup_01', 'm', 'euphotic layer depth (PAR > 0.5 W m-2)')
       call self%register_dependency(self%id_gdept_n, standard_variables%depth) ! TODO Check - this is depth at the layer centres in FABM
@@ -190,7 +190,7 @@ contains
       call self%register_dependency(self%id_pe2, 'pe2', 'W m-2', 'daily mean PAR in green waveband')
       call self%register_dependency(self%id_pe3, 'pe3', 'W m-2', 'daily mean PAR in red waveband')
       call self%register_dependency(self%id_e3t_n, standard_variables%cell_thickness)
-      call self%register_dependency(self%id_hmld, turbocline_depth)
+      call self%register_dependency(self%id_hmld, mixed_layer_thickness_defined_by_vertical_tracer_diffusivity)
       call self%register_dependency(self%id_heup_01, 'heup_01', 'm', 'euphotic layer depth (PAR > 0.5 W m-2)')
    end subroutine
 

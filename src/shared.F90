@@ -21,6 +21,6 @@ module pisces_shared
 
    type (type_universal_standard_variable), parameter :: total_chlorophyll = type_universal_standard_variable(name='total_chlorophyll', units='mg m-3', aggregate_variable=.true.)
    type (type_interior_standard_variable), parameter :: shear_rate = type_interior_standard_variable(name='shear_rate', units='s-1')
-   type (type_surface_standard_variable), parameter :: turbocline_depth = type_surface_standard_variable(name='turbocline_depth', units='m')
+   type (type_surface_standard_variable), parameter :: mixed_layer_thickness_defined_by_vertical_tracer_diffusivity = type_surface_standard_variable(name='mixed_layer_thickness_defined_by_vertical_tracer_diffusivity', units='m')
    type (type_interior_standard_variable), parameter :: calcite_saturation_state = type_interior_standard_variable(name='calcite_saturation_state', units='-')
 end module

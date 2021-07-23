@@ -50,7 +50,7 @@ contains
       if (self%ln_varpar) call self%register_dependency(self%id_par_varsw, 'par_varsw', '1', 'PAR : SWR ratio')
       call self%register_dependency(self%id_qsr_mean, temporal_mean(self%id_qsr, period=86400._rk,resolution=3600._rk))
       call self%register_dependency(self%id_fr_i, standard_variables%ice_area_fraction)
-      call self%register_dependency(self%id_hmld, turbocline_depth)
+      call self%register_dependency(self%id_hmld, mixed_layer_thickness_defined_by_vertical_tracer_diffusivity)
 
       call self%register_diagnostic_variable(self%id_pe1, 'pe1', 'W m-2', 'daily mean PAR in blue band', source=source_do_column)
       call self%register_diagnostic_variable(self%id_pe2, 'pe2', 'W m-2', 'daily mean PAR in green band', source=source_do_column)

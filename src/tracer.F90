@@ -181,7 +181,7 @@ contains
       call self%register_dependency(self%id_ws, 'ws', 'm d-1', 'sinking velocity of particulate organic silicon')
       call self%register_dependency(self%id_gdept_n, standard_variables%depth)
       call self%register_dependency(self%id_heup_01, 'heup_01', 'm', 'depth where daily mean PAR equals 0.5 W m-2')
-      call self%register_dependency(self%id_hmld, turbocline_depth)
+      call self%register_dependency(self%id_hmld, mixed_layer_thickness_defined_by_vertical_tracer_diffusivity)
       call self%register_dependency(self%id_tem, standard_variables%temperature)    ! Jorn: TODO should be in-situ temperature
    end subroutine
 

@@ -64,7 +64,7 @@ contains
 
       call self%register_dependency(self%id_gdept_n, standard_variables%depth)
       call self%register_dependency(self%id_heup, 'heup', 'm', 'euphotic depth')
-      call self%register_dependency(self%id_hmld, turbocline_depth)
+      call self%register_dependency(self%id_hmld, mixed_layer_thickness_defined_by_vertical_tracer_diffusivity)
       call self%register_dependency(self%id_zoo, 'zoo', 'mol C L-1', 'microzooplankton')
       call self%register_dependency(self%id_mes, 'mes', 'mol C L-1', 'mesozooplankton')
       call self%register_dependency(self%id_tem, standard_variables%temperature)
@@ -194,7 +194,7 @@ contains
 
       call self%register_dependency(self%id_gdept_n, standard_variables%depth)
       call self%register_dependency(self%id_heup, 'heup', 'm', 'euphotic depth')
-      call self%register_dependency(self%id_hmld, turbocline_depth)
+      call self%register_dependency(self%id_hmld, mixed_layer_thickness_defined_by_vertical_tracer_diffusivity)
       call self%register_dependency(self%id_zoo, 'zoo', 'mol C L-1', 'microzooplankton')
       call self%register_dependency(self%id_mes, 'mes', 'mol C L-1', 'mesozooplankton')
    end subroutine

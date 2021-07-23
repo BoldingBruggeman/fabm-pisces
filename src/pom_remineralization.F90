@@ -113,7 +113,7 @@ contains
       call self%register_dependency(self%id_ws, 'ws', 'm d-1', 'sinking velocity of particulate organic silicon')
       call self%register_dependency(self%id_e3t_n, standard_variables%cell_thickness)
       call self%register_dependency(self%id_gdept_n, standard_variables%depth)
-      call self%register_dependency(self%id_hmld, turbocline_depth)
+      call self%register_dependency(self%id_hmld, mixed_layer_thickness_defined_by_vertical_tracer_diffusivity)
       call self%register_dependency(self%id_tem, standard_variables%temperature)
       call self%register_dependency(self%id_poc, 'poc', 'mol C L-1', 'particulate organic carbon')
       call self%register_dependency(self%id_prod, 'prod', 'mol C L-1 s-1', 'particulate organic carbon sources')
