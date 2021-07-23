@@ -40,9 +40,6 @@ contains
       class (type_pisces_lability), pointer :: lability
 
       allocate(lability)
-      call self%add_child(lability, 'lability', configunit=-1)
-      call lability%request_coupling(lability%id_poc, '../c')
-      call lability%request_coupling(lability%id_ws, '../ws')
 
       ! Here we compute the GOC -> POC rate due to the shrinking
       ! of the fecal pellets/aggregates as a result of bacterial
@@ -55,6 +52,10 @@ contains
       call self%get_parameter(lability%xremip, 'xremip', '-', 'remineralisation rate', default=0.035_rk)
       call self%get_parameter(lability%jcpoc, 'jcpoc', '', 'number of lability classes', default=15)
       call self%get_parameter(lability%rshape, 'rshape', '-', 'shape of the gamma function', default=1._rk)
+
+      call self%add_child(lability, 'lability', configunit=-1)
+      call lability%request_coupling(lability%id_poc, '../c')
+      call lability%request_coupling(lability%id_ws, '../ws')
 
       call self%register_state_dependency(self%id_c, 'c', 'mol C L-1', 'particulate organic carbon')
       call self%register_state_dependency(self%id_fe, 'fe', 'mol C L-1', 'particulate organic carbon')
