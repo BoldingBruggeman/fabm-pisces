@@ -40,16 +40,15 @@ contains
       class (type_pisces_turbocline), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_COLUMN_
 
-      real(rk) :: avt, h
+      real(rk) :: avt, gdept_n, h
 
       _GET_BOTTOM_(self%id_bdepth, h)
       _UPWARD_LOOP_BEGIN_
          _GET_(self%id_avt, avt)
-         if (avt < self%avt_c) then
-            _GET_(self%id_gdept_n, h)
-         end if
+         _GET_(self%id_gdept_n, gdept_n)
+         if (avt < self%avt_c .and. gdept_n > self%minh) h = gdept_n
       _UPWARD_LOOP_END_
-      _SET_SURFACE_DIAGNOSTIC_(self%id_hmld, max(h, self%minh))
+      _SET_SURFACE_DIAGNOSTIC_(self%id_hmld, h)
    end subroutine
 
 end module
