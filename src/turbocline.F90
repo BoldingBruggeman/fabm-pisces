@@ -33,7 +33,7 @@ contains
          standard_variable=mixed_layer_thickness_defined_by_vertical_tracer_diffusivity, source=source_do_column)
       call self%register_dependency(self%id_gdept_n, standard_variables%depth)
       call self%register_dependency(self%id_bdepth, standard_variables%bottom_depth)
-      call self%register_dependency(self%id_avt, type_interior_standard_variable(name='vertical_diffusivity', units='m s-1'))
+      call self%register_dependency(self%id_avt, type_interior_standard_variable(name='vertical_tracer_diffusivity', units='m s-1'))
    end subroutine initialize
 
    subroutine do_column(self, _ARGUMENTS_DO_COLUMN_)

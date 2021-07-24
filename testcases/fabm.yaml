@@ -288,5 +288,5 @@ instances:
   avt:
     model: interior_constant
     parameters:
-      standard_name: vertical_diffusivity
+      standard_name: vertical_tracer_diffusivity
       value: 1e-6
