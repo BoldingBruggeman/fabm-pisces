@@ -8,15 +8,23 @@ This code must be compiled together with FABM. To do this, provide the following
 
 Here, `<PISCESDIR>` is the directory that with the FABM-PISCES code (the same directory that contains this readme file). Note that `-DFABM_INSTITUTES=pisces` will make FABM compile PISCES as the *only* available biogeochemical model. If you additionally want to have access to other biogeochemical models included with FABM, you can set `FABM_INSTITUTES` to a semi-colon separated list, e.g., `-DFABM_INSTITUTES="pisces;ersem"` (to prevent the shell from interpreting the semi-colons, you typically have to enclose this list with quotes).
 
-For instance, to use PISCES with the [General Ocean Turbulence Model (GOTM)](https://gotm.net/), follow [these instructions](https://github.com/fabm-model/fabm/wiki/GOTM), but in the cmake step, replace `cmake <GOTMDIR>` with:
+For instance, to use PISCES with the latest stable release of the [General Ocean Turbulence Model (GOTM)](https://gotm.net/), do the following:
 
 ```
-cmake <GOTMDIR> -DFABM_INSTITUTES=pisces -DFABM_PISCES_BASE=<PISCESDIR>
+git clone --recurse-submodules -b v6.0 https://github.com/gotm-model/code.git gotm
+git clone https://github.com/fabm-model/fabm.git
+git clone https://github.com/BoldingBruggeman/fabm-pisces.git
+mkdir build
+cd build
+cmake ../gotm -DFABM_BASE=../fabm -DFABM_INSTITUTES=pisces -DFABM_PISCES_BASE=../fabm-pisces
+make install
 ```
+
+This will install the GOTM executable with support for PISCES at `~/local/gotm/bin/gotm`.
 
 ## How to run a FABM-PISCES simulation
 
-A `fabm.yaml` file with the PISCES configuration is provided under `<PISCESDIR>/testcases`. You can drop this file in the working directory of a FABM-compatible model such as GOTM to use it during simulation. Note that for GOTM, you will need also need to ensure that `fabm/use` is set to `true` in `gotm.yaml`. Otherwise GOTM would run with physics only.
+A `fabm.yaml` file with the PISCES configuration is provided under `<PISCESDIR>/testcases`. You can drop this file in the working directory of a FABM-compatible model such as GOTM to use it during simulation. Note that for GOTM, you will also need to ensure that `fabm/use` is set to `true` in `gotm.yaml`. Otherwise GOTM would run with physics only.
 
 ## To do
 
@@ -41,7 +49,7 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 * diazotroph temperature dependence and NO3/NH4 limitation (`p4zsed.F90`) appear to have functionally different forms from those given in the paper
 * threshold for diazotroph limitation is 0.8 in paper, 0.9 in code (`p4zsed.F90`)
 * phytoplankton maximum growth rate [its reference value at 0 degrees Celsius] is 0.6 d-1 in paper, 0.8 d-1 in code.
-* particulate organic mater (POC, GOC) remineralisation is now depth-dependent and calculated using a configurable number of lability classes (`p4zpoc.F90`)
+* particulate organic mater (POC, GOC) remineralisation is now depth-dependent and calculated using a configurable number of lability classes (`p4zpoc.F90`). This has replaced Eq 38.
 * ...
 
 ## Questions to PISCES authors
