@@ -157,8 +157,7 @@ contains
          _ADD_SOURCE_(self%id_doc, - zolimi - denitr - zoxyremc)
          _ADD_SOURCE_(self%id_oxy, - zolimi * o2ut)
          _ADD_SOURCE_(self%id_dic, + zolimi + denitr + zoxyremc)
-         _ADD_SOURCE_(self%id_tal, + rno3 * ( zolimi + zoxyremc    &
-         &                     + ( rdenit + 1._rk) * denitr ))
+         _ADD_SOURCE_(self%id_tal, + rno3 * ( zolimi + zoxyremc + ( rdenit + 1._rk) * denitr ))
 
          _SET_DIAGNOSTIC_(self%id_remin, zolimi)
          _SET_DIAGNOSTIC_(self%id_denit, denitr * rdenit * rno3)
