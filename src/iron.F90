@@ -192,8 +192,7 @@ contains
          zlam1b   = 3.53E3 * goc * xdiss
          zaggdfeb = zlam1b * xstep * zfecoll    ! Jorn: Eq 61b
          !
-         _ADD_SOURCE_(self%id_fer, - zscave - zaggdfea - zaggdfeb &
-         &                     - zcoag - precip)
+         _ADD_SOURCE_(self%id_fer, - zscave - zaggdfea - zaggdfeb - zcoag - precip)
          _ADD_SOURCE_(self%id_sfe, + zscave * zdenom1 + zaggdfea)
          _ADD_SOURCE_(self%id_bfe, + zscave * zdenom2 + zaggdfeb)
          _SET_DIAGNOSTIC_(self%id_scav, zscave)
