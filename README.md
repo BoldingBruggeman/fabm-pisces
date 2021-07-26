@@ -35,7 +35,6 @@ A `fabm.yaml` file with the PISCES configuration is provided under `<PISCESDIR>/
 * add sediment denitrification (`p4zsed.F90`)
 * add bottom fluxes for sinking matter (`p4zsed.F90`)
 * The annual maximum silicate concentration at the surface is currently set in `fabm.yaml`. FABM will need minor changes to compute it on the fly as in `p4zint.F90`.
-* The turbocline depth (mixing layer depth) is currently hardcoded at 10 m in src/turbocline.F90. It should be computed dynamically, but for that, FABM and GOTM need tweaks to pass the turbulent diffusivity.
 * much of the chemistry code (`p4zche.F90` in the original code) uses in-situ temperature. For the moment we substitute the native temperature provided by the host (hydrodynamic model), which often is potential or absolute temperature.
 * support for an iron ligand tracer (`lk_ligand`, `p4z_ligand.F90`) is currently not implemented.
 * use improved initial estimate for H+ with ahini_for_at (`p4zche.F90`)

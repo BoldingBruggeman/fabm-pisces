@@ -285,8 +285,3 @@ instances:
     parameters:
       standard_name: ice_area_fraction
       value: 0
-  avt:
-    model: interior_constant
-    parameters:
-      standard_name: vertical_tracer_diffusivity
-      value: 1e-6
