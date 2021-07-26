@@ -11,7 +11,7 @@ module pisces_iron
 
    type, extends(type_particle_model), public :: type_pisces_iron
       type (type_state_variable_id) :: id_fer, id_sfe, id_bfe
-      type (type_dependency_id) :: id_tempis, id_salinprac, id_xdiss, id_doc, id_poc, id_goc, id_cal, id_gsi, id_hi, id_oxy, id_etot, id_gdept_n, id_dust
+      type (type_dependency_id) :: id_tempis, id_salinprac, id_xdiss, id_doc, id_poc, id_goc, id_cal, id_gsi, id_hi, id_oxy, id_etot, id_gdept_n, id_zdust
       type (type_surface_dependency_id) :: id_gphit
       type (type_diagnostic_variable_id) :: id_scav, id_coll, id_Fe3, id_FeL1, id_zTL1
       real(rk) :: ligand, xlam1, xlamdust, kfep, wdust
@@ -20,7 +20,6 @@ module pisces_iron
       procedure :: do
    end type
 
-   logical, parameter :: ln_dust = .true.
    logical, parameter :: ln_ligvar = .false.
    logical, parameter :: ln_ligand = .false.
 
@@ -34,7 +33,6 @@ contains
       call self%get_parameter(self%xlam1, 'xlam1', 'd-1 umol-1 L', 'scavenging rate', default=0.005_rk)
       call self%get_parameter(self%xlamdust, 'xlamdust', 'd-1 mg-1 L', 'scavenging rate of dust', default=150.0_rk)
       call self%get_parameter(self%kfep, 'kfep', 'd-1', 'nanoparticle formation rate constant', default=0.01_rk)
-      call self%get_parameter(self%wdust, 'wdust', 'm d-1', 'sinking speed of dust', default=2._rk)
 
       call self%register_state_dependency(self%id_fer, 'fer', 'mol Fe L-1', 'iron')
       call self%register_state_dependency(self%id_sfe, 'sfe', 'mol Fe L-1', 'small particulate organic iron')
@@ -67,15 +65,14 @@ contains
       call self%register_dependency(self%id_gdept_n, standard_variables%depth)
       call self%register_dependency(self%id_tempis, standard_variables%temperature) ! TODO should be in-situ temperature (as opposed to conservative/potential)
       call self%register_dependency(self%id_salinprac, standard_variables%practical_salinity)
-      call self%register_dependency(self%id_dust, 'dust', 'g m-2', 'dust deposition')
-      if (.not. ln_dust) call self%request_coupling(self%id_dust, 'zero')
+      call self%register_dependency(self%id_zdust, 'zdust', 'g m-2', 'dust concentration')
    end subroutine
 
    subroutine do(self, _ARGUMENTS_DO_)
       class (type_pisces_iron), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
-      real(rk) :: fer, doc, poc, goc, cal, gsi, hi, oxy, etot, xdiss, gphit, tempis, salinprac, gdept_n, dust
+      real(rk) :: fer, doc, poc, goc, cal, gsi, hi, oxy, etot, xdiss, gphit, tempis, salinprac, gdept_n
       real(rk) :: ztkel, zsal, zis, fekeq, ztkel1, fesol(5)
       real(rk) :: ztotlig, zTL1, zkeq, zfesatur, ztfe, zFe3, zFeL1, zdust, zhplus, fe3sol, zfeequi, zfecoll, precip, ztrc
       real(rk) :: zxlam, zlam1a, zlam1b, zscave, zdenom1, zdenom2, zlamfac, zdep, zcoag, zaggdfea, zaggdfeb
@@ -95,7 +92,7 @@ contains
          _GET_(self%id_tempis, tempis)
          _GET_(self%id_salinprac, salinprac)
          _GET_(self%id_gdept_n, gdept_n)
-         _GET_(self%id_dust, dust)
+         _GET_(self%id_zdust, zdust)
 
          ztkel = tempis + 273.15_rk
          zsal  = salinprac !(ji,jj,1) + ( 1.- tmask(ji,jj,1) ) * 35.
@@ -157,8 +154,6 @@ contains
          precip = MAX( 0., ( zFe3 * 1E-9 - fe3sol ) ) * self%kfep * xstep   ! Jorn: replaces Eq 62?
          !
          ztrc   = ( poc + goc + cal + gsi ) * 1.e6 
-         zdust  = dust / ( self%wdust / rday ) &    ! Jorn: Eq 84, note if .not. ln_dust, dust is (coupled to) 0
-         &  * EXP( -gdept_n / 540. )
          IF (ln_ligand) THEN
             zxlam  = self%xlam1 * MAX( 1.E-3, EXP(-2 * etot / 10. ) * (1. - EXP(-2 * oxy / 100.E-6 ) ))
          ELSE

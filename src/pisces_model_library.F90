@@ -17,6 +17,7 @@ module pisces_model_library
    use pisces_iron
    use pisces_nitrification
    use pisces_nitrogen_fixation
+   use pisces_dust
 
    implicit none
 
@@ -52,6 +53,7 @@ contains
          case ('nitrification');       allocate(type_pisces_nitrification::model)
          case ('nitrogen_fixation');   allocate(type_pisces_nitrogen_fixation::model)
          case ('iron');                allocate(type_pisces_iron::model)
+         case ('dust');                allocate(type_pisces_dust::model)
          ! Add new models here
          case default
             call self%type_base_model_factory%create(name, model)

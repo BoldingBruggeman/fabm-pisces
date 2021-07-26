@@ -2,6 +2,7 @@
 
 module pisces_daylength
    use fabm_types
+   use pisces_shared
 
    implicit none
 
@@ -32,7 +33,6 @@ contains
       _DECLARE_ARGUMENTS_DO_SURFACE_
       
       real(rk)            :: nday_year, zrum, zcodel, gphit, zstrn, zargu
-      real(rk)            :: nyear_len = 365._rk  ! TODO - could be made dynamic to account for leap years
       real(rk), parameter :: rpi      = 3.141592653589793_rk             !: pi
       real(rk), parameter :: rad      = 3.141592653589793_rk / 180._rk   !: conversion from degre into radian
 

@@ -16,6 +16,7 @@ add_library(fabm_models_pisces OBJECT
             nitrification.F90
             nitrogen_fixation.F90
             iron.F90
+            dust.F90
            )
 
 add_dependencies(fabm_models_pisces fabm_base)
