@@ -162,7 +162,7 @@ contains
       call self%register_state_dependency(self%id_no3, 'no3', 'mol C L-1', 'nitrate')
       call self%register_state_dependency(self%id_nh4, 'nh4', 'mol C L-1', 'ammonium')
       call self%register_state_dependency(self%id_po4, 'po4', 'mol C L-1', 'phosphate')
-      if (self%diatom) call self%register_state_dependency(self%id_sil, 'sil', 'mol Si/L', 'silicate')
+      if (self%diatom) call self%register_state_dependency(self%id_sil, 'sil', 'mol Si L-1', 'silicate')
       call self%register_state_dependency(self%id_biron, 'biron', 'mol Fe L-1', 'bioavailable iron')
       call self%register_state_dependency(self%id_doc, 'doc', 'mol C L-1', 'dissolved organic carbon')
       call self%register_state_dependency(self%id_dic, standard_variable=standard_variables%mole_concentration_of_dissolved_inorganic_carbon)
