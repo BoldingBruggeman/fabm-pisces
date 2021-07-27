@@ -9,14 +9,14 @@ module pisces_sediment
    private
 
    type, extends(type_base_model), public :: type_pisces_sediment
-      type (type_bottom_dependency_id) :: id_bdepth, id_cflux, id_siflux, id_calflux
-      type (type_bottom_diagnostic_variable_id) :: id_bc, id_bsi, id_bcal, id_bfe
       type (type_bottom_diagnostic_variable_id) :: id_SedCal, id_SedSi, id_SedC, id_Sdenit
-      type (type_state_variable_id) :: id_sil, id_dic, id_tal, id_oxy, id_no3, id_nh4, id_po4, id_doc
-      type (type_dependency_id) :: id_zomegaca, id_nitrfac
+      type (type_state_variable_id)             :: id_sil, id_dic, id_tal, id_oxy, id_no3, id_nh4, id_po4, id_doc
+      type (type_bottom_dependency_id)          :: id_bdepth, id_cflux, id_siflux, id_calflux
+      type (type_dependency_id)                 :: id_zomegaca, id_nitrfac
+      type (type_bottom_diagnostic_variable_id) :: id_bc, id_bsi, id_bcal, id_bfe
       real(rk) :: sedsilfrac = 0.03_rk
       real(rk) :: sedcalfrac = 0.6_rk
-      real(rk) :: maxdt = 1800._rk ! maximum time step in seconds
+      real(rk) :: maxdt = 1800._rk ! Jorn: maximum time step in seconds, used to limit benthic-pelagic fluxes in order to prevent negative values
    contains
       procedure :: initialize
       procedure :: do_bottom
@@ -28,23 +28,14 @@ contains
       class (type_pisces_sediment), intent(inout), target :: self
       integer,                      intent(in)            :: configunit
 
-      call self%register_diagnostic_variable(self%id_bc, 'c', 'mmol C m-2', 'carbon', source=source_constant, output=output_none, act_as_state_variable=.true.)
-      call self%register_diagnostic_variable(self%id_bsi, 'si', 'mmol Si m-2', 'silicate', source=source_constant, output=output_none, act_as_state_variable=.true.)
-      call self%register_diagnostic_variable(self%id_bcal, 'cal', 'mmol m-2', 'calcite', source=source_constant, output=output_none, act_as_state_variable=.true.)
-      call self%register_diagnostic_variable(self%id_bfe, 'fe', 'mmol Fe m-2', 'calcite', source=source_constant, output=output_none, act_as_state_variable=.true.)
+      call self%register_diagnostic_variable(self%id_SedCal, 'SedCal', 'mol m-2 s-1',    'calcite burial')
+      call self%register_diagnostic_variable(self%id_SedSi,  'SedSi',  'mol Si m-2 s-1', 'silicon burial')
+      call self%register_diagnostic_variable(self%id_SedC,   'SedC',   'mol C m-2 s-1',  'organic carbon burial')
+      call self%register_diagnostic_variable(self%id_Sdenit, 'Sdenit', 'mol N m-2 s-1',  'nitrate reduction')
 
-      call self%register_diagnostic_variable(self%id_SedCal, 'SedCal', 'mol m-2 s-1', 'calcite burial')
-      call self%register_diagnostic_variable(self%id_SedSi,  'SedSi', 'mol Si m-2 s-1', 'silicon burial')
-      call self%register_diagnostic_variable(self%id_SedC,   'SedC', 'mol C m-2 s-1', 'organic carbon burial')
-      call self%register_diagnostic_variable(self%id_Sdenit, 'Sdenit', 'mol N m-2 s-1', 'nitrate reduction')
-
-      call self%register_dependency(self%id_cflux, 'cflux', 'mmol C m-2 s-1', 'bottom carbon flux')
-      call self%register_dependency(self%id_siflux, 'siflux', 'mmol Si m-2 s-1', 'bottom silicate flux')
-      call self%register_dependency(self%id_calflux,'calflux', 'mmol m-2 s-1', 'bottom calcite flux')
-
-      call self%request_coupling(self%id_cflux,'./c_sms_tot')
-      call self%request_coupling(self%id_siflux, './si_sms_tot')
-      call self%request_coupling(self%id_calflux, './cal_sms_tot')
+      call self%register_dependency(self%id_cflux,  'cflux',   'mmol C m-2 s-1',  'bottom carbon flux')
+      call self%register_dependency(self%id_siflux, 'siflux',  'mmol Si m-2 s-1', 'bottom silicate flux')
+      call self%register_dependency(self%id_calflux,'calflux', 'mmol m-2 s-1',    'bottom calcite flux')
 
       call self%register_state_dependency(self%id_no3, 'no3', 'mol C L-1', 'nitrate')
       call self%register_state_dependency(self%id_nh4, 'nh4', 'mol C L-1', 'ammonium')
@@ -58,6 +49,17 @@ contains
       call self%register_dependency(self%id_bdepth, standard_variables%bottom_depth)
       call self%register_dependency(self%id_zomegaca, calcite_saturation_state)
       call self%register_dependency(self%id_nitrfac, 'nitrfac', '1', 'denitrification factor computed from O2 levels')
+
+      ! Fake benthic pools that the pelagic modules can couple to and deposit their sinking material in.
+      ! The resulting downward fluxes are picked up by this module to compute sediment processes (see request_coupling calls below).
+      call self%register_diagnostic_variable(self%id_bc,   'c',   'mmol C m-2',  'carbon',   source=source_constant, output=output_none, act_as_state_variable=.true.)
+      call self%register_diagnostic_variable(self%id_bsi,  'si',  'mmol Si m-2', 'silicate', source=source_constant, output=output_none, act_as_state_variable=.true.)
+      call self%register_diagnostic_variable(self%id_bcal, 'cal', 'mmol m-2',    'calcite',  source=source_constant, output=output_none, act_as_state_variable=.true.)
+      call self%register_diagnostic_variable(self%id_bfe,  'fe',  'mmol Fe m-2', 'iron',     source=source_constant, output=output_none, act_as_state_variable=.true.)
+
+      call self%request_coupling(self%id_cflux,'./c_sms_tot')
+      call self%request_coupling(self%id_siflux, './si_sms_tot')
+      call self%request_coupling(self%id_calflux, './cal_sms_tot')
    end subroutine
 
    subroutine do_bottom(self, _ARGUMENTS_DO_BOTTOM_)
@@ -116,7 +118,6 @@ contains
          _ADD_BOTTOM_FLUX_(self%id_dic, + zpdenit + zolimit )
          _SET_BOTTOM_DIAGNOSTIC_(self%id_Sdenit,  rdenit * zpdenit * 1.e+3_rk * rno3)
          _SET_BOTTOM_DIAGNOSTIC_(self%id_SedC, (1. - zrivno3) * zwstpoc * 1.e+3_rk)
-
       _BOTTOM_LOOP_END_
    end subroutine
 
