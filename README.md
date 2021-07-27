@@ -29,15 +29,15 @@ A `fabm.yaml` file with the PISCES configuration is provided under `<PISCESDIR>/
 ## To do
 
 * hook up POC lability parameterization (`p4zpoc.F90`) to consumption and produciton terms (currently zero)
+* correct silicate dissolution (use vertical integral as in `p4zrem.F90`)
+* use improved initial estimate for H+ with ahini_for_at (`p4zche.F90`)
 * add source of iron due to sea ice melt (`p4zsed.F90`, `ln_ironice`)
 * add iron input from hydrothermal vents - implement in TOP-FABM or in PISCES code? (`p4zsed.F90`, `ln_hydrofe`)
 * The annual maximum silicate concentration at the surface is currently set in `fabm.yaml`. FABM will need minor changes to compute it on the fly as in `p4zint.F90`.
 * much of the chemistry code (`p4zche.F90` in the original code) uses in-situ temperature. For the moment we substitute the native temperature provided by the host (hydrodynamic model), which often is potential or absolute temperature.
 * support for an iron ligand tracer (`lk_ligand`, `p4z_ligand.F90`) is currently not implemented.
-* use improved initial estimate for H+ with ahini_for_at (`p4zche.F90`)
 * check light fields: Are they for horizontal average of entire grid cell, or ice-free section only? What do the various processes expect?
-* correct silicate dissolution (use vertical integral as in `p4zrem.F90`)
-* check dust inputs for top layer (why do dissolution at the center in the original PISCES code?)
+* check dust inputs for top layer (why no dissolution at the center in the original PISCES code?)
 
 ## Differences from the published PISCES description
 
