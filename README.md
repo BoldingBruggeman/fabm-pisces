@@ -28,7 +28,7 @@ A `fabm.yaml` file with the PISCES configuration is provided under `<PISCESDIR>/
 
 ## To do
 
-* hook up POC lability parameterization (`p4zpoc.F90`) to consumption and produciton terms (currently zero)
+* hook up POC lability parameterization (`p4zpoc.F90`) to consumption and production terms (currently zero)
 * correct silicate dissolution (use vertical integral as in `p4zrem.F90`)
 * use improved initial estimate for H+ with ahini_for_at (`p4zche.F90`)
 * add source of iron due to sea ice melt (`p4zsed.F90`, `ln_ironice`)
@@ -71,4 +71,4 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
                zfactcal = MIN( excess(ji,jj,ikt), 0.2 )
                zfactcal = MIN( 1., 1.3 * ( 0.2 - zfactcal ) / ( 0.4 - zfactcal ) )
 ```
-First question: does `zfactcal` represent the rpeserved fraction, as hinted at by the paper and matching the fact that in increases with increasing saturation [= decreasing `zfactcal`]. Or does it represent the dissolved fraction, as it is treated inthe original PISCES code? In the latter case, however, `excess` takes negative values when the water is supersaturated. This leads to `zfactcal` being positive, and dissolution occuring. Is that intentional? It leads to further oversaturation and even faster dissolution - a positive feedback.
+First question: does `zfactcal` represent the preserved fraction, as hinted at by the paper and matching the fact that in increases with increasing saturation [= decreasing `zfactcal`]. Or does it represent the dissolved fraction, as it is treated inthe original PISCES code? In the latter case, however, `excess` takes negative values when the water is supersaturated. This leads to `zfactcal` being positive, and dissolution occuring. Is that intentional? It leads to further oversaturation and even faster dissolution - a positive feedback.
