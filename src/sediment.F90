@@ -91,6 +91,8 @@ contains
 
          _GET_BOTTOM_(self%id_siflux, zsiloss)   ! Jorn: this is the bottom flux in mmol m-2 s-1; in PISCES it is multiplied with time step and layer thickness
          _GET_BOTTOM_(self%id_calflux, zcaloss)
+         zsiloss = zsiloss * 1.E-6_rk
+         zcaloss = zcaloss * 1.E-6_rk
          zrivsil = 1._rk - self%sedsilfrac
          _ADD_BOTTOM_FLUX_(self%id_sil, + zsiloss * zrivsil)
          _GET_(self%id_zomegaca, zomegaca)

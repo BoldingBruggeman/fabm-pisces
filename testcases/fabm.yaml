@@ -276,6 +276,7 @@ instances:
       pom: pom
       gom: gom
   sed:
+    long_name: sediment
     model: pisces/sediment
     coupling:
       no3: no3/c
