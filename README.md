@@ -66,9 +66,9 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 * why the different treatment of POC and GOC disaggregation in the mixed layer (`p4zpoc.F90`)? Is that because the sinking rate of POC is constant, whereas the sinking of GOC is (potentially) depth-dependent?
 * in `p4zsed.F90`, what does the 270 represent in `zwdust = 0.03 * rday / ( wdust * 55.85 ) / ( 270. * rday )`?
 * dust dissolution (`p4zsed.F90`) has two parts: instantaneous dissolution upon deposition at the surface, and (slower) dissolution throughout the column. But why does the latter not apply to the (center of) the top layer?
-* in `p4zsed.F90`, calcite dissolutioin in sediment depends on the calcite saturation state of the overlying water (Eq 91 in paper): 
+* in `p4zsed.F90`, calcite dissolution in sediment depends on the calcite saturation state of the overlying water (Eq 91 in paper): 
 ```
                zfactcal = MIN( excess(ji,jj,ikt), 0.2 )
                zfactcal = MIN( 1., 1.3 * ( 0.2 - zfactcal ) / ( 0.4 - zfactcal ) )
 ```
-However, `excess` takes negative values when the water is supersaturated. This leads to `zfactcal` being positive, and dissolution occuring. Is that intentional? It leads to furthe roversaturation and even faster dissolution - a positive feedback.
+First question: does `zfactcal` represent the rpeserved fraction, as hinted at by the paper and matching the fact that in increases with increasing saturation [= decreasing `zfactcal`]. Or does it represent the dissolved fraction, as it is treated inthe original PISCES code? In the latter case, however, `excess` takes negative values when the water is supersaturated. This leads to `zfactcal` being positive, and dissolution occuring. Is that intentional? It leads to further oversaturation and even faster dissolution - a positive feedback.
