@@ -1,0 +1,21 @@
+name: Build and test
+on: push
+jobs:
+   gfortran:
+      runs-on: ubuntu-latest
+      steps:
+      - name: Clone repository
+        uses: actions/checkout@v2
+        with:
+           path: fabm-pisces
+      - name: Clone FABM
+        uses: actions/checkout@v2
+        with:
+           path: fabm
+           repository: fabm-model/fabm
+      - name: Build
+        run: |
+          mkdir $GITHUB_WORKSPACE/build
+          cd $GITHUB_WORKSPACE/build
+          cmake $GITHUB_WORKSPACE/fabm -DFABM_HOST=gotm  -DFABM_INSTITUTES=pisces -DFABM_PISCES_BASE=$GITHUB_WORKSPACE/fabm-pisces
+          make
