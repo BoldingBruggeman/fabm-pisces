@@ -31,15 +31,13 @@ A `fabm.yaml` file with the PISCES configuration is provided under `<PISCESDIR>/
 * hook up POC lability parameterization (`p4zpoc.F90`) to consumption and produciton terms (currently zero)
 * add source of iron due to sea ice melt (`p4zsed.F90`, `ln_ironice`)
 * add iron input from hydrothermal vents - implement in TOP-FABM or in PISCES code? (`p4zsed.F90`, `ln_hydrofe`)
-* add sediment denitrification (`p4zsed.F90`)
-* add bottom fluxes for sinking matter (`p4zsed.F90`)
 * The annual maximum silicate concentration at the surface is currently set in `fabm.yaml`. FABM will need minor changes to compute it on the fly as in `p4zint.F90`.
 * much of the chemistry code (`p4zche.F90` in the original code) uses in-situ temperature. For the moment we substitute the native temperature provided by the host (hydrodynamic model), which often is potential or absolute temperature.
 * support for an iron ligand tracer (`lk_ligand`, `p4z_ligand.F90`) is currently not implemented.
 * use improved initial estimate for H+ with ahini_for_at (`p4zche.F90`)
 * check light fields: Are they for horizontal average of entire grid cell, or ice-free section only? What do the various processes expect?
 * correct silicate dissolution (use vertical integral as in `p4zrem.F90`)
-* check dust inputs for top layer
+* check dust inputs for top layer (why do dissolution at the center in the original PISCES code?)
 
 ## Differences from the published PISCES description
 
@@ -68,3 +66,9 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 * why the different treatment of POC and GOC disaggregation in the mixed layer (`p4zpoc.F90`)? Is that because the sinking rate of POC is constant, whereas the sinking of GOC is (potentially) depth-dependent?
 * in `p4zsed.F90`, what does the 270 represent in `zwdust = 0.03 * rday / ( wdust * 55.85 ) / ( 270. * rday )`?
 * dust dissolution (`p4zsed.F90`) has two parts: instantaneous dissolution upon deposition at the surface, and (slower) dissolution throughout the column. But why does the latter not apply to the (center of) the top layer?
+* in `p4zsed.F90`, calcite dissolutioin in sediment depends on the calcite saturation state of the overlying water (Eq 91 in paper): 
+```
+               zfactcal = MIN( excess(ji,jj,ikt), 0.2 )
+               zfactcal = MIN( 1., 1.3 * ( 0.2 - zfactcal ) / ( 0.4 - zfactcal ) )
+```
+However, `excess` takes negative values when the water is supersaturated. This leads to `zfactcal` being positive, and dissolution occuring. Is that intentional? It leads to furthe roversaturation and even faster dissolution - a positive feedback.
