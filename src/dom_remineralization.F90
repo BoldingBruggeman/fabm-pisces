@@ -32,8 +32,6 @@ module pisces_dom_remineralization
       procedure :: do_column  => bacteria_do_column
    end type
 
-   real(rk), parameter :: rdenit  =  ( ( o2ut + o2nit ) * 0.80 - rno3 - rno3 * 0.60 ) / rno3
-
 contains
 
    subroutine initialize(self, configunit)
