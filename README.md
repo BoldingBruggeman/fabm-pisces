@@ -34,7 +34,7 @@ A `fabm.yaml` file with the PISCES configuration is provided under `<PISCESDIR>/
 * add source of iron due to sea ice melt (`p4zsed.F90`, `ln_ironice`)
 * add iron input from hydrothermal vents - implement in TOP-FABM or in PISCES code? (`p4zsed.F90`, `ln_hydrofe`)
 * The annual maximum silicate concentration at the surface is currently set in `fabm.yaml`. FABM will need minor changes to compute it on the fly as in `p4zint.F90`.
-* much of the chemistry code (`p4zche.F90` in the original code) uses in-situ temperature. For the moment we substitute the native temperature provided by the host (hydrodynamic model), which often is potential or absolute temperature.
+* much of the chemistry code (`p4zche.F90` in the original code) uses in-situ temperature. For the moment we substitute the native temperature provided by the host (hydrodynamic model), which often is potential or conservative temperature.
 * support for an iron ligand tracer (`lk_ligand`, `p4z_ligand.F90`) is currently not implemented.
 * check light fields: Are they for horizontal average of entire grid cell, or ice-free section only? What do the various processes expect?
 * check dust inputs for top layer (why no dissolution at the center in the original PISCES code?)
@@ -47,6 +47,7 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 * threshold for diazotroph limitation is 0.8 in paper, 0.9 in code (`p4zsed.F90`)
 * phytoplankton maximum growth rate [its reference value at 0 degrees Celsius] is 0.6 d-1 in paper, 0.8 d-1 in code.
 * particulate organic mater (POC, GOC) remineralisation is now depth-dependent and calculated using a configurable number of lability classes (`p4zpoc.F90`). This has replaced Eq 38.
+* exponent for silicate dissolution (`p4zrem.F90`) is now 9.25 (9 in Eq 52 of paper)
 * ...
 
 ## Questions to PISCES authors

@@ -42,8 +42,8 @@ contains
       call self%register_state_dependency(self%id_sil, 'sil', 'mol Si L-1', 'silicate')
 
       call self%register_diagnostic_variable(self%id_zirondep, 'zirondep', 'mol m-2 s-1', 'iron deposition')
-      call self%register_diagnostic_variable(self%id_pdust, 'pdust', 'g m-3', 'dust concentration at the surface')
-      call self%register_diagnostic_variable(self%id_zdust, 'zdust', 'g m-3', 'dust concentration')
+      call self%register_diagnostic_variable(self%id_pdust, 'pdust', 'g m-3', 'concentration at the surface')
+      call self%register_diagnostic_variable(self%id_zdust, 'zdust', 'g m-3', 'concentration')
    end subroutine initialize
 
    subroutine do_surface(self, _ARGUMENTS_DO_SURFACE_)
