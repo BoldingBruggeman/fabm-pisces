@@ -47,7 +47,7 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 * threshold for diazotroph limitation is 0.8 in paper, 0.9 in code (`p4zsed.F90`)
 * phytoplankton maximum growth rate [its reference value at 0 degrees Celsius] is 0.6 d-1 in paper, 0.8 d-1 in code.
 * particulate organic mater (POC, GOC) remineralisation is now depth-dependent and calculated using a configurable number of lability classes (`p4zpoc.F90`). This has replaced Eq 38.
-* exponent for silicate dissolution (`p4zrem.F90`) is now 9.25 (9 in Eq 52 of paper)
+* exponent for silicate dissolution (`p4zrem.F90`) is 9 in Eq 52 of paper, but 9.25 in code. The latter matches the [Ridgwell paper](https://doi.org/10.1029/2002GB001877).
 * ...
 
 ## Questions to PISCES authors
