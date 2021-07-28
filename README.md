@@ -52,24 +52,25 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 
 ## Questions to PISCES authors
 
+*  What is the unit of `zpres` in `p4zche.F90`?  L248 seems to convert from dbar to bar, but comments on L345-354 suggest dbar is needed. (question posed to Olivier Aumont 19 July 2021)
+* in `p4zsed.F90`, calcite dissolution in sediment depends on the calcite saturation state of the overlying water (Eq 91 in paper): 
+```
+               zfactcal = MIN( excess(ji,jj,ikt), 0.2 )
+               zfactcal = MIN( 1., 1.3 * ( 0.2 - zfactcal ) / ( 0.4 - zfactcal ) )
+```
+Does `zfactcal` represent the preserved fraction, as hinted at by the paper and matching the fact that it increases with increasing saturation [= decreasing `zfactcal`]. Or does it represent the dissolved fraction, as it is treated in the original PISCES code? In the latter case, however, `excess` takes negative values when the water is supersaturated. This leads to `zfactcal` being positive and dissolution occuring. Is that intentional? It leads to further oversaturation and even faster dissolution - a positive feedback.
 * The nitrogen fixation section in `p4zsed.F90` contains non-conservative DOC-related production of PO4 that seems unrelated to nitrogen fixation, depends on a half-saturation from diatoms, and is not documented in the PISCES paper. What does this represent?
 ```
                   tra(ji,jj,jk,jppo4) = tra(ji,jj,jk,jppo4) + concdnh4 / ( concdnh4 + trb(ji,jj,jk,jppo4) ) &
                   &                     * 0.001 * trb(ji,jj,jk,jpdoc) * xstep
 ```
 
-* Likewise, there is the following block in `p4zsed.F90`. What does this represent?
+* There is non-conservative iron production in `p4zsed.F90`, linked to diazotrophs via `zsoufer`. What process does this represent?
 ```
                   tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) + 0.002 * 4E-10 * zsoufer(ji,jj,jk) * rfact2 / rday
 ```
 * Bacterial uptake of iron in `p4zrem.F90` uses a hardcoded maximum phytoplankton growth rate of 0.6 d-1 (at 0 degrees Celsius). That matches the paper, but not the latest PISCES code, in which this constant has been replaced by 0.8 d-1. Should the bacterial uptake constant not be replaced too?
-*  What is the unit of zpres in `p4zche.F90`?  L248 seems to convert from dbar to bar, but comments on L345-354 suggest dbar is needed. (Asked Olivier Aumont 19 July 2021)
 * why the different treatment of POC and GOC disaggregation in the mixed layer (`p4zpoc.F90`)? Is that because the sinking rate of POC is constant, whereas the sinking of GOC is (potentially) depth-dependent?
 * in `p4zsed.F90`, what does the 270 represent in `zwdust = 0.03 * rday / ( wdust * 55.85 ) / ( 270. * rday )`?
-* dust dissolution (`p4zsed.F90`) has two parts: instantaneous dissolution upon deposition at the surface, and (slower) dissolution throughout the column. But why does the latter not apply to the (center of) the top layer?
-* in `p4zsed.F90`, calcite dissolution in sediment depends on the calcite saturation state of the overlying water (Eq 91 in paper): 
-```
-               zfactcal = MIN( excess(ji,jj,ikt), 0.2 )
-               zfactcal = MIN( 1., 1.3 * ( 0.2 - zfactcal ) / ( 0.4 - zfactcal ) )
-```
-First question: does `zfactcal` represent the preserved fraction, as hinted at by the paper and matching the fact that in increases with increasing saturation [= decreasing `zfactcal`]. Or does it represent the dissolved fraction, as it is treated inthe original PISCES code? In the latter case, however, `excess` takes negative values when the water is supersaturated. This leads to `zfactcal` being positive, and dissolution occuring. Is that intentional? It leads to further oversaturation and even faster dissolution - a positive feedback.
+* dust dissolution (`p4zsed.F90`) has two parts: instantaneous dissolution upon deposition at the surface, and (slower) dissolution throughout the column. But why does the latter not apply to the (center of) the top layer? (the responsible loop starts at `jk=2`)
+* Assuming `dust` is in g m-2 s-1 and `wdust` in m d-1, shouldn't `wdust` be divided by `rday` instead of multiplied by it in `CALL iom_put( "pdust"  , dust(:,:) / ( wdust * rday )  * tmask(:,:,1) ) ` (in `p4zsed.F90`)
