@@ -19,7 +19,8 @@ module pisces_phytoplankton
       type (type_surface_dependency_id) :: id_gphit, id_fr_i, id_silm
       type (type_diagnostic_variable_id) :: id_quota, id_xfracal
       type (type_diagnostic_variable_id) :: id_zlim1, id_zlim2, id_zlim3, id_zlim4, id_xlim
-      type (type_diagnostic_variable_id) :: id_zprmax
+      type (type_diagnostic_variable_id) :: id_PPPHY, id_PPNEW, id_PBSi, id_PFe
+      type (type_diagnostic_variable_id) :: id_zprmax, id_Mu, id_Llight
 
       logical :: diatom
       logical :: calcify
@@ -144,7 +145,7 @@ contains
       call self%register_dependency(self%id_hmld, mixed_layer_thickness_defined_by_vertical_tracer_diffusivity)
       call self%register_dependency(self%id_xdiss, shear_rate)
       call self%register_dependency(self%id_heup_01, 'heup_01', 'm', 'euphotic layer depth (PAR > 0.5 W m-2)')
-      call self%register_dependency(self%id_gdept_n, standard_variables%depth) ! TODO Check - this is depth at the layer centres in FABM
+      call self%register_dependency(self%id_gdept_n, standard_variables%depth)
       call self%register_dependency(self%id_pe1, 'pe1', 'W m-2', 'daily mean PAR in blue waveband')
       call self%register_dependency(self%id_pe2, 'pe2', 'W m-2', 'daily mean PAR in green waveband')
       call self%register_dependency(self%id_pe3, 'pe3', 'W m-2', 'daily mean PAR in red waveband')
@@ -175,7 +176,13 @@ contains
       call self%register_diagnostic_variable(self%id_zlim3, 'LSi', '-', 'silicate limitation term')
       call self%register_diagnostic_variable(self%id_zlim4, 'LFe', '-', 'iron limitation term')
       call self%register_diagnostic_variable(self%id_xlim, 'Lnut', '-', 'nutrient limitation term')
+      call self%register_diagnostic_variable(self%id_PPPHY, 'PPPHY', 'mol C m-3 s-1', 'primary production')
+      call self%register_diagnostic_variable(self%id_PPNEW, 'PPNEW', 'mol C m-3 s-1', 'new primary production')
+      if (self%diatom) call self%register_diagnostic_variable(self%id_PBSi, 'PBSi', 'mol Si m-3 s-1', 'biogenic silica production')
+      call self%register_diagnostic_variable(self%id_PFe, 'PFe', 'mol Fe m-3 s-1', 'biogenic iron production')
       call self%register_diagnostic_variable(self%id_zprmax, 'mumax', 's-1', 'maximum growth rate after temperature correction')
+      call self%register_diagnostic_variable(self%id_Mu, 'Mu', 's-1', 'realized growth rate')
+      call self%register_diagnostic_variable(self%id_Llight, 'Llight', '1', 'light limitation term')
       if (self%calcify) call self%register_diagnostic_variable(self%id_xfracal, 'xfracal', '1', 'calcifying fraction')
 
    end subroutine initialize
@@ -321,7 +328,6 @@ contains
 
          ! Computation of the optimal production - Jorn note conversion to 1/s
          zprmax = self%mumax0 * r1_rday * tgfunc   ! Jorn: Eq 4b in PISCES-v2 paper; NEMO-PISCES uses a hardcoded mumax0 = 0.8, which evolved from the value of 0.6 in the paper (Olivier Aumont 2021-04-21)
-         _SET_DIAGNOSTIC_(self%id_zprmax, zprmax)
 
          zmxl_fac = 0._rk ! Jorn - added to ensure zpr setting below never depends on undefined value
 
@@ -430,6 +436,11 @@ contains
             end if
             _ADD_SOURCE_(self%id_dic, -zprorca)
             _ADD_SOURCE_(self%id_tal, rno3 * zpronew - rno3 * zproreg)
+         ELSE
+            zprorca = 0._rk
+            zpronew = 0._rk
+            zprofe = 0._rk
+            zysopt = 0._rk
          ENDIF
 
          !
@@ -451,22 +462,17 @@ contains
        !IF( lk_iomput .AND.  knt == nrdttrc ) THEN
        !   zfact = 1.e+3 * rfact2r  !  conversion from mol/l/kt to  mol/m3/s
        !   !
-       !   CALL iom_put( "PPPHYN"  , zprorcan(:,:,:) * zfact * tmask(:,:,:) )  ! primary production by nanophyto
-       !   CALL iom_put( "PPPHYD"  , zprorcad(:,:,:) * zfact * tmask(:,:,:)   ) ! primary production by diatomes
-       !   CALL iom_put( "PPNEWN"  , zpronewn(:,:,:) * zfact * tmask(:,:,:)    ) ! new primary production by nanophyto
-       !   CALL iom_put( "PPNEWD"  , zpronewd(:,:,:) * zfact * tmask(:,:,:)   ) ! new primary production by diatomes
-       !   CALL iom_put( "PBSi"    , zprorcad(:,:,:) * zfact * tmask(:,:,:) * zysopt(:,:,:)  ) ! biogenic silica production
-       !   CALL iom_put( "PFeN"    , zprofen(:,:,:) * zfact * tmask(:,:,:)  ) ! biogenic iron production by nanophyto
-       !   CALL iom_put( "PFeD"    , zprofed(:,:,:) * zfact * tmask(:,:,:)  ) ! biogenic iron production by  diatomes
+         _SET_DIAGNOSTIC_(self%id_PPPHY, zprorca * 1.e+3) ! primary production
+         _SET_DIAGNOSTIC_(self%id_PPNEW, zpronew * 1.e+3) ! primary production
+         if (self%diatom) _SET_DIAGNOSTIC_(self%id_PBSi, zprorca * 1.e+3 * zysopt) ! biogenic silica production
+         _SET_DIAGNOSTIC_(self%id_PFe, zprofe * 1.e+3) ! biogenic iron production
        !   IF( ln_ligand ) THEN
        !     CALL iom_put( "LPRODP"  , zpligprod1(:,:,:) * 1e9 * zfact * tmask(:,:,:) )
        !     CALL iom_put( "LDETP"   , zpligprod2(:,:,:) * 1e9 * zfact * tmask(:,:,:) )
        !   ENDIF
-       !   CALL iom_put( "Mumax"   , zprmaxn(:,:,:) * tmask(:,:,:)  ) ! Maximum growth rate
-       !   CALL iom_put( "MuN"     , zprbio(:,:,:) * xlimphy(:,:,:) * tmask(:,:,:) ) ! Realized growth rate for nanophyto
-       !   CALL iom_put( "MuD"     , zprdia(:,:,:) * xlimdia(:,:,:) * tmask(:,:,:) ) ! Realized growth rate for diatoms
-       !   CALL iom_put( "LNlight" , zprbio (:,:,:) / (zprmaxn(:,:,:) + rtrn) * tmask(:,:,:)  )  ! light limitation term
-       !   CALL iom_put( "LDlight" , zprdia (:,:,:) / (zprmaxd(:,:,:) + rtrn) * tmask(:,:,:)   )
+         _SET_DIAGNOSTIC_(self%id_zprmax, zprmax) ! Maximum growth rate
+         _SET_DIAGNOSTIC_(self%id_Mu, zpr * xlim) ! Realized growth rate
+         _SET_DIAGNOSTIC_(self%id_Llight, zpr / (zprmax + rtrn))  ! light limitation term
        !   CALL iom_put( "TPP"     , ( zprorcan(:,:,:) + zprorcad(:,:,:) ) * zfact * tmask(:,:,:)  )  ! total primary production
        !   CALL iom_put( "TPNEW"   , ( zpronewn(:,:,:) + zpronewd(:,:,:) ) * zfact * tmask(:,:,:)  ) ! total new production
        !   CALL iom_put( "TPBFE"   , ( zprofen(:,:,:) + zprofed(:,:,:) ) * zfact * tmask(:,:,:)  )  ! total biogenic iron production

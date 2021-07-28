@@ -13,7 +13,7 @@ module pisces_carbonate_chemistry
       type (type_state_variable_id) :: id_tal
       type (type_dependency_id) :: id_tempis, id_salinprac, id_rhop, id_sil, id_po4, id_zpres, id_h2co3
       type (type_surface_dependency_id) :: id_wndm, id_fr_i, id_patm, id_satmco2
-      type (type_diagnostic_variable_id) :: id_ph, id_hi, id_CO3sat, id_zomegaca, id_zh2co3
+      type (type_diagnostic_variable_id) :: id_ph, id_hi, id_CO3, id_CO3sat, id_zomegaca, id_zh2co3
       type (type_surface_diagnostic_variable_id) :: id_Cflx, id_Kg, id_Dpco2, id_pCO2sea
    contains
       procedure :: initialize
@@ -103,7 +103,8 @@ contains
 
       call self%register_diagnostic_variable(self%id_PH, 'PH', '1', 'pH', standard_variable=standard_variables%ph_reported_on_total_scale)
       call self%register_diagnostic_variable(self%id_hi, 'hi', 'mol L-1', 'hydrogen ion concentration')
-      call self%register_diagnostic_variable(self%id_CO3sat, 'CO3sat', 'mol L-1', 'CO3 saturation')
+      call self%register_diagnostic_variable(self%id_CO3, 'CO3', 'mol m-3', 'CO3 concentration')
+      call self%register_diagnostic_variable(self%id_CO3sat, 'CO3sat', 'mol m-3', 'CO3 concentration at saturation')
       call self%register_diagnostic_variable(self%id_zomegaca, 'zomegaca', '1', 'CaCO3 saturation state', standard_variable=calcite_saturation_state)
       call self%register_diagnostic_variable(self%id_zh2co3, 'zh2co3', 'mol L-1', 'carbonic acid concentration')
 
@@ -360,7 +361,8 @@ contains
          zcalcon  = calcon * ( salinprac / 35._rk )
          zomegaca = ( zcalcon * zco3 ) / ( aksp * zfact + rtrn )
          zco3sat = aksp * zfact / ( zcalcon + rtrn )
-         _SET_DIAGNOSTIC_(self%id_CO3sat, zco3sat)    ! from p4zlys.F90
+         _SET_DIAGNOSTIC_(self%id_CO3, zco3 * 1.e3_rk)          ! from p4zlys.F90
+         _SET_DIAGNOSTIC_(self%id_CO3sat, zco3sat * 1.e3_rk)    ! from p4zlys.F90
          _SET_DIAGNOSTIC_(self%id_zomegaca, zomegaca)
       _LOOP_END_
    end subroutine

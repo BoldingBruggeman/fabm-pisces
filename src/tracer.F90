@@ -172,7 +172,7 @@ contains
       call self%get_parameter(self%kdca, 'kdca', 'month-1', 'dissolution rate constant', default=6._rk)   ! 0.197 d-1 in paper
       call self%get_parameter(self%nca, 'nca', '-', 'exponent in the dissolution rate', default=1._rk)
 
-      call self%register_diagnostic_variable(self%id_dcal, 'DCAL', 'mol C L-1 s-1', 'rate')
+      call self%register_diagnostic_variable(self%id_dcal, 'DCAL', 'mol C m-3 s-1', 'rate')
 
       call self%register_state_dependency(self%id_cal, 'cal', 'mol C L-1', 'calcite')
       call self%register_state_dependency(self%id_dic, standard_variable=standard_variables%mole_concentration_of_dissolved_inorganic_carbon)
@@ -210,7 +210,7 @@ contains
          _ADD_SOURCE_(self%id_tal, + 2. * zcaldiss)
          _ADD_SOURCE_(self%id_cal, -      zcaldiss)
          _ADD_SOURCE_(self%id_dic, +      zcaldiss)
-         _SET_DIAGNOSTIC_(self%id_dcal, zcaldiss)
+         _SET_DIAGNOSTIC_(self%id_dcal, zcaldiss * 1.e3_rk)
       _LOOP_END_
    end subroutine
 
