@@ -33,7 +33,7 @@ contains
       call self%get_parameter(self%mfrac, 'mfrac', '1', 'Fe mineral fraction of dust', default=0.035_rk)
       call self%get_parameter(self%wdust, 'wdust', 'm d-1', 'sinking speed of dust', default=2._rk)
 
-      call self%register_dependency(self%id_dustdep, 'dustdep', 'g m-2', 'dust deposition')
+      call self%register_dependency(self%id_dustdep, 'dustdep', 'g m-2 s-1', 'dust deposition')
       if (self%ln_solub) call self%register_dependency(self%id_solub, 'solub', '1', 'solubility of iron in dust')
       call self%register_dependency(self%id_gdept_n, standard_variables%depth)
 
@@ -92,7 +92,7 @@ contains
 
          _SET_DIAGNOSTIC_(self%id_zdust, zdust)
 
-         zirondep = zdust * self%mfrac * 0.03 * rday / 55.85 / 270.  ! Jorn : 0.03 is likely the dissolution rate in d-1 (though paper gives 0.01 d-1) - but what is the 270?
+         zirondep = zdust * self%mfrac * 0.03 / 55.85 / (270.* rday)  ! Jorn : 0.03 is likely the dissolution rate in d-1 (though paper gives 0.01 d-1) - but what is the 270?
          zpdep    = zirondep * 0.023
          !                                              ! Iron solubilization of particles in the water column
          _ADD_SOURCE_(self%id_po4, + zpdep   )          ! Jorn: TODO this should exclude the top layer
