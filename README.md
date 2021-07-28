@@ -29,7 +29,6 @@ A `fabm.yaml` file with the PISCES configuration is provided under `<PISCESDIR>/
 ## To do
 
 * hook up POC lability parameterization (`p4zpoc.F90`) to consumption and production terms (currently zero)
-* correct silicate dissolution (use vertical integral as in `p4zrem.F90`)
 * use improved initial estimate for H+ with ahini_for_at (`p4zche.F90`)
 * add source of iron due to sea ice melt (`p4zsed.F90`, `ln_ironice`)
 * add iron input from hydrothermal vents - implement in TOP-FABM or in PISCES code? (`p4zsed.F90`, `ln_hydrofe`)
@@ -58,7 +57,7 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
                zfactcal = MIN( excess(ji,jj,ikt), 0.2 )
                zfactcal = MIN( 1., 1.3 * ( 0.2 - zfactcal ) / ( 0.4 - zfactcal ) )
 ```
-Does `zfactcal` represent the preserved fraction, as hinted at by the paper and matching the fact that it increases with increasing saturation [= decreasing `zfactcal`]. Or does it represent the dissolved fraction, as it is treated in the original PISCES code? In the latter case, however, `excess` takes negative values when the water is supersaturated. This leads to `zfactcal` being positive and dissolution occuring. Is that intentional? It leads to further oversaturation and even faster dissolution - a positive feedback.
+Does `zfactcal` represent the preserved fraction, as hinted at by the paper and matching the fact that it increases with increasing saturation [= decreasing `zfactcal`]? Or does it represent the dissolved fraction, as it is treated in the original PISCES code? In the latter case, however, `excess` takes negative values when the water is supersaturated. This leads to `zfactcal` being positive and dissolution occuring. Is that intentional? It leads to further oversaturation and even faster dissolution - a positive feedback.
 * The nitrogen fixation section in `p4zsed.F90` contains non-conservative DOC-related production of PO4 that seems unrelated to nitrogen fixation, depends on a half-saturation from diatoms, and is not documented in the PISCES paper. What does this represent?
 ```
                   tra(ji,jj,jk,jppo4) = tra(ji,jj,jk,jppo4) + concdnh4 / ( concdnh4 + trb(ji,jj,jk,jppo4) ) &
