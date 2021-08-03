@@ -37,7 +37,7 @@ contains
       call self%get_parameter(self%ln_varpar, 'ln_varpar', '', 'use variable PAR : SWR ratio', default=.true.)
       if (.not. self%ln_varpar) then
          call self%get_parameter(parlux, 'parlux', '-', 'PAR : SWR ratio', default=0.43_rk)
-         self%xparsw = parlux / 3.0_rk   ! Divide PAR equally over R-G-B wavebands
+         self%xparsw = parlux / 3.0_rk   ! Divide PAR equally over R-G-B wavebands (division by 3 in Eq 5a)
       end if
       call self%get_parameter(rn_si0, 'rn_si0', 'm', 'extinction depth for non-visible radiation (SWR - PAR)', default=0.35_rk)  ! this comes from NEMO, traqsr
       self%xsi0r = 1._rk / rn_si0
@@ -87,11 +87,11 @@ contains
       IF( self%ln_varpar ) THEN
          ! PAR is variable fraction of SWR
          _GET_SURFACE_(self%id_par_varsw, par_varsw)
-         zqsr      = par_varsw   * qsr      / 3.0_rk   ! distribute equally over three wavebands
-         zqsr_mean = par_varsw   * qsr_mean / 3.0_rk   ! distribute equally over three wavebands
+         zqsr      = par_varsw   * qsr      / 3.0_rk   ! Jorn: Eq 5a, distribute equally over three wavebands
+         zqsr_mean = par_varsw   * qsr_mean / 3.0_rk   ! Jorn: Eq 5a, distribute equally over three wavebands
       ELSE
          ! PAR is constant fraction of SWR.
-         ! Note: xparsw already includes 1/3 scale factor for distribution over three wavebands
+         ! Note: xparsw already includes 1/3 scale factor for distribution over three wavebands (Eq 5a)
          zqsr      = self%xparsw * qsr
          zqsr_mean = self%xparsw * qsr_mean
       ENDIF

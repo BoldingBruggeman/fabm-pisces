@@ -46,6 +46,17 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 * phytoplankton maximum growth rate [its reference value at 0 degrees Celsius] is 0.6 d-1 in paper, 0.8 d-1 in code.
 * particulate organic mater (POC, GOC) remineralisation is now depth-dependent and calculated using a configurable number of lability classes (`p4zpoc.F90`). This has replaced Eq 38.
 * exponent for silicate dissolution (`p4zrem.F90`) is 9 in Eq 52 of paper, but 9.25 in code. The latter matches the [Ridgwell paper](https://doi.org/10.1029/2002GB001877).
+* quadratic mortality of diatoms depends in a different way on nutrient limitation thna described in the paper (Eq 13)
+* quadratic and linear mortality of nanophytoplankton is now modified by cell size
+* a threshold concentration `xmort` of diatoms and nanophytoplankton is now protected from mortality
+* the P-I slope of diatoms is now the average of separate slopes of small and large cells (and the small : large ratio is dynamic, inferred from model state)
+* the P-I slope of nanophytoplankton is now optionally temperature-dependent through the `xadap` parameter (but this is off by default as `xadap` defaults to 0)
+* only the new formulation of the P-I slope is supported in the code. In effect the `ln_newprod` switch mentioned in the paper is always on, Eq 2a is always used, Eq 2b never.
+* The time spent below the euphotic zone is now incorporated in a reduced effective day length. This makes Eqs 3b-3d (and any use of f2, as e.g. for chlorophyll synthesis) in paper redundant. Also, only one term (the equivalent of f1(L_day)) is now used in the photosynthesis equation, while in the paper f1(L_day) is used for maximum photosynthesis, but L_day within the light limitation term.
+* maximum chl : C ratio is now temperature dependent
+* chlorophyll synthesis (Eq 15b) now lacks division by nutrient limitation in light limitation term. This is similar to the difference between Eq 2a and 2b (has chlorophyll been "upgraded" to become like Eq 2a?)
+* the upper limit of 5.4 in equation 22 for silicate uptake seem to have been removed
+* latitude dependence of silicate limitation differs (paper: threshold at equator, above limiter is 1; code: threshold at 30 degrees South, above limiter is 1 + Si3/(Si3+c))
 * ...
 
 ## Questions to PISCES authors

@@ -305,7 +305,7 @@ contains
          zconc2  = c - zconc                     ! Jorn: equivalent to Eq 7a, carbon biomass (mol C/L) in small cells
          z1_trb   = 1._rk / ( c + rtrn )         ! 1 / carbon biomass
 
-         concfe   = MAX( self%concfer, ( zconc2 * self%concfer + self%concfer * self%xsizer * zconc ) * z1_trb ) ! Jorn: Eq 7c (seems to have replaced iron-based 18b), size-weighted iron half saturation
+         concfe   = MAX( self%concfer, ( zconc2 * self%concfer + self%concfer * self%xsizer * zconc ) * z1_trb ) ! Jorn: Eq 7c (18b), size-weighted iron half saturation
          zconcno3 = MAX( self%concno3, ( zconc2 * self%concno3 + self%concno3 * self%xsizer * zconc ) * z1_trb ) ! Jorn: Eq 7c, size-weighted nitrate half saturation
          zconcnh4 = MAX( self%concnh4, ( zconc2 * self%concnh4 + self%concnh4 * self%xsizer * zconc ) * z1_trb ) ! Jorn: Eq 7c, size-weighted ammonium half saturation
 
@@ -316,7 +316,7 @@ contains
          xnh4 = nh4 * zconcno3 * zdenom
          !
          zlim1    = xno3 + xnh4                ! Jorn: Eq 6c, nitrogen limitation (dimensionless)
-         zlim2    = po4 / ( po4 + zconcnh4 )   ! Jorn: Eq 6b: phosphorus limitation (dimensionless), note it uses NH4 half saturation (same units!)
+         zlim2    = po4 / ( po4 + zconcnh4 )   ! Jorn: Eq 6b: phosphorus limitation (dimensionless), note it uses NH4 half saturation (same units - concentration of carbon equivalents!)
          if (self%diatom) then
             ! Jorn: From p4zint
             _GET_SURFACE_(self%id_xksi, xksi)
@@ -331,7 +331,7 @@ contains
          xpo4 = zlim2
          xlimfe = MIN( 1., zlim4 )
          xlim = MIN( zlim1, zlim2, zlim3, zlim4 )   ! Jorn: Eq 11a, combined N, P, (Si), Fe limitation factor (dimensionless)
-         xlimsi = MIN( zlim1, zlim2, zlim4 )        ! Jorn: part of Eq 23a, combined limitation by all nutrients (N, P, Fe) EXCEPT Si (dimensionless)
+         xlimsi = MIN( zlim1, zlim2, zlim4 )        ! Jorn: Eq 6a (also part of Eq 23a): combined limitation by all nutrients (N, P, Fe) EXCEPT Si (dimensionless)
          ! ======================================================================================
 
          _SET_DIAGNOSTIC_(self%id_zlim1, zlim1)
@@ -347,7 +347,7 @@ contains
 
          ! Impact of the day duration and light intermittency on phytoplankton growth
          IF( etot_ndcy > 1.E-3 ) THEN
-            zval = MAX( 1., zstrn )
+            zval = MAX( 1., zstrn )   ! Jorn: clip day length to a minimum of 1 hour
             IF( gdept_n <= hmld ) THEN
                zval = zval * MIN(1._rk, heup_01 / ( hmld + rtrn ))   ! Jorn: when in mixing layer, multiply with fraction of time spent in euphotic depth; it seems to be an easier-to-understand substitute for Eq 3b-3d
             ENDIF
@@ -376,13 +376,13 @@ contains
 
             !  Computation of production function for Chlorophyll - Jorn Eq15b
             !--------------------------------------------------
-            zpislope = zpislopead / ( zprmax * zmxl_chl * rday + rtrn )   ! note zprmax is in 1/s and multiplied with rday to convert to d-1. Resulting units are (W m-2)-1
+            zpislope = zpislopead / ( zprmax * zmxl_chl * rday + rtrn )   ! note zprmax is in 1/s and multiplied with rday to convert to d-1. Resulting units are (W m-2)-1. No divison by nutrient limitation (similar to Eq 2a replacing 2b)
             zprch = zprmax * ( 1._rk - EXP( -zpislope * etot_wm ) )       ! Units 1/s, note this uses mean PAR experienced in the euphotic layer (or 0 if below ML) - units are 1/d
          ENDIF
 
          !  Computation of a proxy of the N/C ratio - Jorn: this seems to be relative to rno3 (not the absolute N:C!)
          !  ---------------------------------------
-         zval = MIN( xpo4, ( xnh4 + xno3 ) )   &
+         zval = MIN( xpo4, ( xnh4 + xno3 ) )   &    ! Jorn: maximum growth rate at replete light, silicate [only nitrogen and phosphate limitation taken into account]
          &      * zprmax / ( zpr + rtrn )
          quota = MIN( 1., 0.2_rk + 0.8_rk * zval )
          _SET_DIAGNOSTIC_(self%id_quota, quota)
@@ -398,7 +398,7 @@ contains
             zsilim = MIN( zpr / ( zprmax + rtrn ), xlimsi )                                                                ! Jorn Eq 23a
             zsilfac = 4.4_rk * EXP( -4.23_rk * zsilim ) * MAX( 0._rk, MIN( 1._rk, 2.2_rk * ( zlim - 0.5_rk ) )  ) + 1._rk  ! Jorn Eq 22, 23b
             zsiborn = sil * sil * sil
-            IF (gphit < -30._rk ) THEN
+            IF (gphit < -30._rk ) THEN   ! threshold is 0 degrees in paper
                zsilfac2 = 1._rk + 2._rk * zsiborn / ( zsiborn + self%xksi2**3 )  ! Eq 22 (last part), 23d
             ELSE
                zsilfac2 = 1._rk +         zsiborn / ( zsiborn + self%xksi2**3 )  ! ??? 23d suggests this term is 1 for lat > 0
@@ -413,7 +413,7 @@ contains
          ! Computation of the various production terms 
          IF( etot_ndcy > 1.E-3 ) THEN
             zprorca = zpr  * xlim* c                           ! total production (mol C/L/s), dropped multiplication with rfact2 [time step in seconds]
-            zpronew  = zprorca* xno3 / ( xno3 + xnh4 + rtrn )  ! new production (mol C/L/s)
+            zpronew  = zprorca* xno3 / ( xno3 + xnh4 + rtrn )  ! Eq 8, new production (mol C/L/s)
             !
             zratio = fe / ( c * self%fecm + rtrn )   ! Jorn: internal iron pool relative to maximum value (dimensionless)
             zmax   = MAX( 0., ( 1._rk - zratio ) / ABS( 1.05_rk - zratio ) )            ! ratio in Eq 17 (dimensionless)
@@ -425,7 +425,7 @@ contains
             ! Computation of the chlorophyll production terms
             !  production terms for nanophyto. ( chlorophyll )
             ztot = etot_wm / ( zmxl_chl + rtrn )         ! Jorn: PAR/L_day in Eq 15a
-            zprod    = rday * zprorca * zprch * xlim     ! Eq15b??? note zprorca was the increment in carbon (mol C/L) over a single time step, but we divide by timestep and thus have the rate of production
+            zprod    = rday * zprorca * zprch * xlim     ! Eq15b Note zprorca was the increment in carbon (mol C/L) over a single time step, but we divide by timestep and thus have the rate of production
             zprochl = self%chlcmin * 12._rk * zprorca       ! Jorn: first part of Eq14, increase in Chl associated with increase in carbon (using carbon production and minimum Chl:C), units are g Chl/L/s
             chlcm_n   = MIN ( self%chlcm, ( self%chlcm / (1. - 1.14 / 43.4 *tem)) * (1. - 1.14 / 43.4 * 20.))  ! temperature correction of max Chl?
             zprochl = zprochl + (chlcm_n-self%chlcmin) * 12. * zprod / &
@@ -433,7 +433,7 @@ contains
             _ADD_SOURCE_(self%id_ch, zprochl * self%texcret)
 
             !   Update the arrays TRA which contain the biological sources and sinks
-            zproreg  = zprorca - zpronew
+            zproreg  = zprorca - zpronew    ! Regenerated production, equivalent to Eq 8 (part 2)
             zdocprod = self%excret * zprorca
             _ADD_SOURCE_(self%id_po4, - zprorca)
             _ADD_SOURCE_(self%id_no3, - zpronew)
@@ -443,7 +443,7 @@ contains
             _ADD_SOURCE_(self%id_doc, zdocprod)
             _ADD_SOURCE_(self%id_oxy, o2ut * zproreg + ( o2ut + o2nit ) * zpronew)
             !
-            _ADD_SOURCE_(self%id_biron, -self%texcret * zprofe)    ! TODO perhaps this should be total iron (id_fer?) rather than bioavailable iron???
+            _ADD_SOURCE_(self%id_biron, -self%texcret * zprofe)
             if (self%diatom) then
                _ADD_SOURCE_(self%id_si, zprorca * zysopt * self%texcret)
                _ADD_SOURCE_(self%id_sil, -self%texcret * zprorca * zysopt)
@@ -530,7 +530,7 @@ contains
          !     ------------------------------------------------------------
          ! Jorn: for non-diatoms this will not have any effect because wchldm will be 0 (see zrespp)
          zlim2   = xlim * xlim
-         zlim1   = 0.25_rk * ( 1._rk - zlim2 ) / ( 0.25_rk + zlim2 ) 
+         zlim1   = 0.25_rk * ( 1._rk - zlim2 ) / ( 0.25_rk + zlim2 )    ! Jorn: seems to have replaced Eq 13
 
          !     When highly limited by macronutrients, very small cells 
          !     dominate the community. As a consequence, aggregation
@@ -549,7 +549,7 @@ contains
          !     Phytoplankton mortality. This mortality loss is slightly
          !     increased when nutrients are limiting phytoplankton growth
          !     as observed for instance in case of iron limitation.
-         ztortp = self%mprat * xstep * zcompa / ( self%xkmort + c ) * zsizerat    ! Jorn: hyperbolic part of 5th term in Eq37
+         ztortp = self%mprat * xstep * zcompa / ( self%xkmort + c ) * zsizerat    ! Jorn: hyperbolic part of 5th term in Eq 37, except for zsizerat, minimum threshold in zcompa
 
          zmortp = zrespp + ztortp
 
