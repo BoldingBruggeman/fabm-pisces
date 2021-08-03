@@ -105,7 +105,7 @@ contains
       call self%register_diagnostic_variable(self%id_hi, 'hi', 'mol L-1', 'hydrogen ion concentration')
       call self%register_diagnostic_variable(self%id_CO3, 'CO3', 'mol m-3', 'CO3 concentration')
       call self%register_diagnostic_variable(self%id_CO3sat, 'CO3sat', 'mol m-3', 'CO3 concentration at saturation')
-      call self%register_diagnostic_variable(self%id_zomegaca, 'zomegaca', '1', 'CaCO3 saturation state', standard_variable=calcite_saturation_state)
+      call self%register_diagnostic_variable(self%id_zomegaca, 'zomegaca', '1', 'calcite saturation state', standard_variable=calcite_saturation_state)
       call self%register_diagnostic_variable(self%id_zh2co3, 'zh2co3', 'mol L-1', 'carbonic acid concentration')
 
       call self%register_diagnostic_variable(self%id_Cflx, 'Cflx', 'mol m-2 s-1', 'air-sea CO2 flux')

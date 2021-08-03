@@ -53,7 +53,7 @@ contains
       call self%get_parameter(lability%jcpoc, 'jcpoc', '', 'number of lability classes', default=15)
       call self%get_parameter(lability%rshape, 'rshape', '-', 'shape of the gamma function', default=1._rk)
 
-      call self%add_child(lability, 'lability', configunit=-1)
+      call self%add_child(lability, 'lability')
       call lability%request_coupling(lability%id_poc, '../c')
       call lability%request_coupling(lability%id_ws, '../ws')
 

@@ -112,7 +112,6 @@ instances:
       pe3: optics/pe3
       etot_ndcy: optics/etot_ndcy
       zstrn: daylength/zstrn
-      silm: si_max/data
       poc: pom/c
       sfe: pom/fe
       goc: gom/c
@@ -300,10 +299,6 @@ instances:
     parameters:
       standard_name: mole_fraction_of_carbon_dioxide_in_air
       value: 350.
-  si_max:
-    model: surface_constant
-    parameters:
-      value: 1.07e-7
   ice:
     model: surface_constant
     parameters:

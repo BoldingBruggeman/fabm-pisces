@@ -3,6 +3,7 @@
 module pisces_phytoplankton
 
    use fabm_types
+   use fabm_expressions
    use pisces_shared
 
    implicit none
@@ -16,7 +17,8 @@ module pisces_phytoplankton
       type (type_dependency_id)         :: id_tem, id_gdept_n, id_xdiss
       type (type_dependency_id)         :: id_pe1, id_pe2, id_pe3, id_etot_ndcy, id_etot_w
       type (type_surface_dependency_id) :: id_zstrn, id_hmld, id_heup_01, id_etot_wm
-      type (type_surface_dependency_id) :: id_gphit, id_fr_i, id_silm
+      type (type_surface_dependency_id) :: id_gphit, id_fr_i, id_xksi_
+      type (type_horizontal_dependency_id) :: id_xksi
       type (type_diagnostic_variable_id) :: id_quota, id_xfracal
       type (type_diagnostic_variable_id) :: id_zlim1, id_zlim2, id_zlim3, id_zlim4, id_xlim
       type (type_diagnostic_variable_id) :: id_PPPHY, id_PPNEW, id_PBSi, id_PFe
@@ -33,8 +35,6 @@ module pisces_phytoplankton
       !real(rk) :: concpo4
       real(rk) :: concnh4
       real(rk) :: concno3
-      real(rk) :: concsil
-      real(rk) :: xksilim
       real(rk) :: xksi1
       real(rk) :: xksi2
       real(rk) :: concfer
@@ -64,13 +64,24 @@ module pisces_phytoplankton
       procedure :: do_column  => par_do_column
    end type
 
+   type, extends(type_base_model) :: type_silicate_half_saturation
+      type (type_dependency_id)                  :: id_sil
+      type (type_surface_diagnostic_variable_id) :: id_xksi
+      real(rk) :: concsil
+      real(rk) :: xksilim
+   contains
+      procedure :: initialize => silicate_half_saturation_initialize
+      procedure :: do_surface => silicate_half_saturation_do_surface
+   end type
+
 contains
 
    subroutine initialize(self, configunit)
       class (type_pisces_phytoplankton), intent(inout), target :: self
       integer,                           intent(in)            :: configunit
 
-      class (type_par), pointer :: par_model
+      class (type_par),                      pointer :: par_model
+      class (type_silicate_half_saturation), pointer :: silicate_half_saturation
 
       allocate(par_model)
 
@@ -89,8 +100,10 @@ contains
       call self%get_parameter(self%concnh4, 'concnh4', 'mol C L-1', 'minimum half-saturation constant for ammonium (nitrogen units multiplied with C:N ratio of biomass)')
       call self%get_parameter(self%concno3, 'concno3', 'mol C L-1', 'minimum half-saturation constant for nitrate (nitrogen units multiplied with C:N ratio of biomass)')
       if (self%diatom) then
-         call self%get_parameter(self%concsil, 'concsil', 'mol Si L-1', 'minimum half-saturation constant for silicate uptake', default=1e-6_rk)
-         call self%get_parameter(self%xksilim, 'xksilim', 'mol Si L-1', 'parameter for the half-saturation constant for silicate uptake', default=16.5e-6_rk)  ! default=16.6 in paper
+         allocate(silicate_half_saturation)
+         call self%add_child(silicate_half_saturation, 'silicate_half_saturation')
+         call self%get_parameter(silicate_half_saturation%concsil, 'concsil', 'mol Si L-1', 'minimum half-saturation constant for silicate uptake', default=1e-6_rk)
+         call self%get_parameter(silicate_half_saturation%xksilim, 'xksilim', 'mol Si L-1', 'parameter for the half-saturation constant for silicate uptake', default=16.5e-6_rk)  ! default=16.6 in paper
          call self%get_parameter(self%xksi1, 'xksi1', 'mol Si L-1', 'parameter 1 for Si / C', default=2.e-6_rk)
          call self%get_parameter(self%xksi2, 'xksi2', 'mol Si L-1', 'parameter 2 for Si / C', default=20.e-6_rk)
       end if
@@ -112,7 +125,7 @@ contains
       if (self%calcify) call self%get_parameter(self%caco3r, 'caco3r', '1', 'mean rain ratio', default=0.3_rk)
 
       ! Set up submodel for computing available light
-      call self%add_child(par_model, 'par', configunit=configunit)
+      call self%add_child(par_model, 'par')
       call par_model%request_coupling(par_model%id_heup_01, '../heup_01')
       call par_model%request_coupling(par_model%id_pe1, '../pe1')
       call par_model%request_coupling(par_model%id_pe2, '../pe2')
@@ -153,22 +166,26 @@ contains
       call self%register_dependency(self%id_etot_w, 'etot_w', 'W m-2', 'daily mean PAR weighted by wavelength-specific absorption coefficients')
       call self%register_dependency(self%id_etot_wm, 'etot_wm', 'W m-2', 'daily mean PAR weighted by wavelength-specific absorption coefficients, averaged over euphotic layer')
       call self%register_dependency(self%id_fr_i, standard_variables%ice_area_fraction)
-      if (self%diatom) then
-         call self%register_dependency(self%id_gphit, standard_variables%latitude)
-         call self%register_dependency(self%id_silm, 'silm', 'mol Si/L', 'annual maximum surface silicate concentration')
-      end if
       call self%request_coupling(self%id_etot_w, 'par/etot')
       call self%request_coupling(self%id_etot_wm, 'par/etotm')
 
       call self%register_state_dependency(self%id_no3, 'no3', 'mol C L-1', 'nitrate')
       call self%register_state_dependency(self%id_nh4, 'nh4', 'mol C L-1', 'ammonium')
       call self%register_state_dependency(self%id_po4, 'po4', 'mol C L-1', 'phosphate')
-      if (self%diatom) call self%register_state_dependency(self%id_sil, 'sil', 'mol Si L-1', 'silicate')
       call self%register_state_dependency(self%id_biron, 'biron', 'mol Fe L-1', 'bioavailable iron')
       call self%register_state_dependency(self%id_doc, 'doc', 'mol C L-1', 'dissolved organic carbon')
       call self%register_state_dependency(self%id_dic, standard_variable=standard_variables%mole_concentration_of_dissolved_inorganic_carbon)
       call self%register_state_dependency(self%id_tal, standard_variables%alkalinity_expressed_as_mole_equivalent)
       call self%register_state_dependency(self%id_oxy, 'oxy', 'mol O2 L-1', 'oxygen')
+
+      if (self%diatom) then
+         call self%register_state_dependency(self%id_sil, 'sil', 'mol Si L-1', 'silicate')
+         call self%register_dependency(self%id_gphit, standard_variables%latitude)
+         call self%register_dependency(self%id_xksi_, 'xksi', 'mol Si L-1', 'instantaneous silicate half-saturation constant')
+         call silicate_half_saturation%request_coupling(silicate_half_saturation%id_sil, '../sil')
+         call self%request_coupling(self%id_xksi_, 'silicate_half_saturation/xksi')
+         call self%register_dependency(self%id_xksi, temporal_maximum(self%id_xksi_, period=nyear_len * rday, resolution=nyear_len * rday, missing_value=2.e-6_rk))
+      end if
 
       call self%register_diagnostic_variable(self%id_quota, 'quota', 'mol N (mol C)-1', 'proxy of the N/C ratio')
       call self%register_diagnostic_variable(self%id_zlim1, 'LN', '-', 'nitrogen limitation term')
@@ -243,7 +260,7 @@ contains
       real(rk) :: nh4, no3, po4, biron, sil
       real(rk) :: tem, gdept_n, zstrn, hmld, heup_01, etot_ndcy, etot_w, etot_wm, silm, gphit, fr_i
       real(rk) :: tgfunc, zconc, zconc2, z1_trb, concfe, zconcno3, zconcnh4, zdenom, xno3, xnh4, xpo4, zlim1, zlim2, xlim, xlimsi
-      real(rk) :: zvar, xksi, zlim3
+      real(rk) :: xksi, zlim3
       real(rk) :: zratio, zironmin, zlim4, xlimfe
       real(rk) :: zprmax, zval, zmxl_chl, zmxl_fac, zpr
       real(rk) :: ztn, zadap, pislope, zpislopead, zpislope, zprch
@@ -302,10 +319,7 @@ contains
          zlim2    = po4 / ( po4 + zconcnh4 )   ! Jorn: Eq 6b: phosphorus limitation (dimensionless), note it uses NH4 half saturation (same units!)
          if (self%diatom) then
             ! Jorn: From p4zint
-            _GET_SURFACE_(self%id_silm, silm)        ! annual maximum surface silicate concentration
-            zvar = silm * silm
-            xksi = ( 1._rk+ 7._rk* zvar / ( self%xksilim * self%xksilim + zvar ) ) * self%concsil   ! Eq 12, note self%concsil=1e-6 is hardcoded in NEMO-PISCES
-
+            _GET_SURFACE_(self%id_xksi, xksi)
             _GET_(self%id_sil, sil)   ! ambient silicate concentration (mol Si/L)
             zlim3    = sil / ( sil + xksi )    ! Eq 11b
          else
@@ -569,6 +583,28 @@ contains
          _ADD_SOURCE_(self%id_bfe, + (xfraresp * zrespp + xfratort * ztortp) * zfactfe)
 
       _LOOP_END_
+   end subroutine
+
+   subroutine silicate_half_saturation_initialize(self, configunit)
+      class (type_silicate_half_saturation), intent(inout), target :: self
+      integer,                               intent(in)            :: configunit
+
+      call self%register_dependency(self%id_sil, 'sil', 'mol Si L-1', 'silicate')
+      call self%register_diagnostic_variable(self%id_xksi, 'xksi', 'mol Si L-1', 'silicate half saturation')
+   end subroutine
+
+   subroutine silicate_half_saturation_do_surface(self, _ARGUMENTS_DO_SURFACE_)
+      class (type_silicate_half_saturation), intent(in) :: self
+      _DECLARE_ARGUMENTS_DO_SURFACE_
+
+      real(rk) :: sil, zvar, xksi
+
+      _SURFACE_LOOP_BEGIN_
+         _GET_(self%id_sil, sil)
+         zvar = sil * sil
+         xksi = self%concsil + 7.e-6_rk * zvar / ( self%xksilim * self%xksilim + zvar )    ! Eq 12, note self%concsil=1e-6 is hardcoded in NEMO-PISCES, p4zint.F90
+         _SET_SURFACE_DIAGNOSTIC_(self%id_xksi, xksi)
+      _SURFACE_LOOP_END_
    end subroutine
 
 end module

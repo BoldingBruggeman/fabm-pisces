@@ -115,7 +115,7 @@ contains
             ztotlig =  0.09 * doc * 1E6 + self%ligand * 1E9    ! Jorn: Eq 67 (note max operator in that Eq has no effect)
             ztotlig =  MIN( ztotlig, 10. )
          ELSE
-           IF( ln_ligand ) THEN  ;   !ztotlig = lgw * 1E9      ! Jonr: TODO
+           IF( ln_ligand ) THEN  ;   !ztotlig = lgw * 1E9      ! Jorn: TODO
            ELSE                  ;   ztotlig = self%ligand * 1E9
            ENDIF
          ENDIF

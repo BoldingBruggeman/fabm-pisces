@@ -109,11 +109,11 @@ contains
          call self%add_to_aggregate_variable(standard_variables%total_carbon, self%id_cal, scale_factor=1e6_rk)
 
          allocate(calcite_dissolution)
-         call self%add_child(calcite_dissolution, 'calcite_dissolution', configunit=-1)
+         call self%add_child(calcite_dissolution, 'calcite_dissolution')
          call calcite_dissolution%request_coupling(calcite_dissolution%id_cal, '../cal')
 
          allocate(silicate_dissolution)
-         call self%add_child(silicate_dissolution, 'silicate_dissolution', configunit=-1)
+         call self%add_child(silicate_dissolution, 'silicate_dissolution')
          call silicate_dissolution%request_coupling(silicate_dissolution%id_gsi, '../si')
          call silicate_dissolution%request_coupling('rate/ws', '../ws')
          call silicate_dissolution%request_coupling(silicate_dissolution%id_sil, '../../sil/si')  ! Jorn: hack, TODO fix!!
@@ -226,7 +226,7 @@ contains
       call self%get_parameter(dissolution_rate%xsirem, 'xsirem', 'd-1', 'remineralization rate of Si', default=0.003_rk)
       call self%get_parameter(dissolution_rate%xsiremlab, 'xsiremlab', 'd-1', 'fast remineralization rate of Si', default=0.03_rk)
       call self%get_parameter(dissolution_rate%xsilab, 'xsilab', '1', 'labile fraction of biogenic silica', default=0.5_rk)
-      call self%add_child(dissolution_rate, 'rate', configunit=-1)
+      call self%add_child(dissolution_rate, 'rate')
 
       call self%register_diagnostic_variable(self%id_remin, 'remin', 'mol Si L-1 s-1', 'rate')
 

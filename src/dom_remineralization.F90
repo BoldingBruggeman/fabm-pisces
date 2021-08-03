@@ -68,7 +68,7 @@ contains
       call self%register_dependency(self%id_tem, standard_variables%temperature)
 
       allocate(pbacteria)
-      call self%add_child(pbacteria, 'bacteria', configunit=-1)
+      call self%add_child(pbacteria, 'bacteria')
       call pbacteria%request_coupling(pbacteria%id_heup, '../heup')
       call pbacteria%request_coupling(pbacteria%id_zoo, '../zoo')
       call pbacteria%request_coupling(pbacteria%id_mes, '../mes')
