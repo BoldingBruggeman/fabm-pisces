@@ -46,7 +46,7 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 * phytoplankton maximum growth rate [its reference value at 0 degrees Celsius] is 0.6 d-1 in paper, 0.8 d-1 in code.
 * particulate organic mater (POC, GOC) remineralisation is now depth-dependent and calculated using a configurable number of lability classes (`p4zpoc.F90`). This has replaced Eq 38.
 * exponent for silicate dissolution (`p4zrem.F90`) is 9 in Eq 52 of paper, but 9.25 in code. The latter matches the [Ridgwell paper](https://doi.org/10.1029/2002GB001877).
-* quadratic mortality of diatoms depends in a different way on nutrient limitation thna described in the paper (Eq 13)
+* quadratic mortality of diatoms depends in a different way on nutrient limitation than described in the paper (Eq 13)
 * quadratic and linear mortality of nanophytoplankton is now modified by cell size
 * a threshold concentration `xmort` of diatoms and nanophytoplankton is now protected from mortality
 * the P-I slope of diatoms is now the average of separate slopes of small and large cells (and the small : large ratio is dynamic, inferred from model state)
@@ -57,6 +57,9 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 * chlorophyll synthesis (Eq 15b) now lacks division by nutrient limitation in light limitation term. This is similar to the difference between Eq 2a and 2b (has chlorophyll been "upgraded" to become like Eq 2a?)
 * the upper limit of 5.4 in equation 22 for silicate uptake seem to have been removed
 * latitude dependence of silicate limitation differs (paper: threshold at equator, above limiter is 1; code: threshold at 30 degrees South, above limiter is 1 + Si3/(Si3+c))
+* zooplankton: a threshold concentration of 1e-9 mol C/L is protected from mortality (linear and quadratic)
+* quadratic zooplankton mortality and grazing are now depressed when oxygen becomes limiting
+* zooplankton: new expressions for decrease in gross growth efficiency due to low food quality or high food quantity [latter off by default]
 * ...
 
 ## Questions to PISCES authors
@@ -83,3 +86,4 @@ Does `zfactcal` represent the preserved fraction, as hinted at by the paper and 
 * in `p4zsed.F90`, what does the 270 represent in `zwdust = 0.03 * rday / ( wdust * 55.85 ) / ( 270. * rday )`?
 * dust dissolution (`p4zsed.F90`) has two parts: instantaneous dissolution upon deposition at the surface, and (slower) dissolution throughout the column. But why does the latter not apply to the (center of) the top layer? (the responsible loop starts at `jk=2`)
 * Assuming `dust` is in g m-2 s-1 and `wdust` in m d-1, shouldn't `wdust` be divided by `rday` instead of multiplied by it in `CALL iom_put( "pdust"  , dust(:,:) / ( wdust * rday )  * tmask(:,:,1) ) ` (in `p4zsed.F90`)
+* quadratic mortality losses of mesozooplankton are ascribed to higher trophic levels. Accordingly a fraction of this loss is respired, a fraction ends up in fecal pellets. The remainder supposedly inside those HTLs - but since they are not tracked by PISCES, that is a non-conservative loss terms. What's the idea behind this? (where does that mass ultimately go? harvested?)

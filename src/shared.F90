@@ -26,4 +26,6 @@ module pisces_shared
    type (type_interior_standard_variable), parameter :: shear_rate = type_interior_standard_variable(name='shear_rate', units='s-1')
    type (type_surface_standard_variable), parameter :: mixed_layer_thickness_defined_by_vertical_tracer_diffusivity = type_surface_standard_variable(name='mixed_layer_thickness_defined_by_vertical_tracer_diffusivity', units='m')
    type (type_interior_standard_variable), parameter :: calcite_saturation_state = type_interior_standard_variable(name='calcite_saturation_state', units='-')
+
+   type (type_universal_standard_variable), parameter :: calcite_production = type_universal_standard_variable(name='calcite_production', units='mol m-3 s-1', aggregate_variable=.true.)
 end module

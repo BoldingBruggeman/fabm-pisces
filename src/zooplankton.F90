@@ -16,7 +16,7 @@ module pisces_zooplankton
       type (type_state_variable_id) :: id_dia, id_dfe, id_dsi, id_dch, id_phy, id_nfe, id_nch, id_zoo, id_poc, id_sfe, id_goc, id_bfe, id_gsi
       type (type_state_variable_id) :: id_po4, id_no3, id_nh4, id_doc, id_dic, id_tal, id_poc_waste, id_pof_waste, id_pos_waste, id_cal
       type (type_dependency_id)     :: id_tem, id_nitrfac, id_quotan, id_quotad, id_xfracal, id_wspoc, id_wsgoc
-      type (type_diagnostic_variable_id) :: id_zfezoo, id_zgrazing, id_zfrac
+      type (type_diagnostic_variable_id) :: id_zfezoo, id_zgrazing, id_zfrac, id_pcal
 
       real(rk) :: grazrat, resrat, xkmort, mzrat, xthresh, xkgraz, ferat, epsher, epshermin, unass, sigma, part, grazflux
       real(rk) :: xthreshdia, xthreshphy, xthreshzoo, xthreshpoc
@@ -63,9 +63,11 @@ contains
       call self%add_to_aggregate_variable(standard_variables%total_phosphorus, self%id_c, scale_factor=po4r * 1e6_rk)
       call self%add_to_aggregate_variable(standard_variables%total_iron, self%id_c, scale_factor=self%ferat * 1e9_rk)
 
-      call self%register_diagnostic_variable(self%id_zfezoo, 'fezoo', 'mol Fe L-1 s-1', 'iron recycling rate')
-      call self%register_diagnostic_variable(self%id_zgrazing, 'graz', 'mol C L-1 s-1', 'grazing')
-      call self%register_diagnostic_variable(self%id_zfrac, 'zfrac', 'mol C L-1 s-1', 'fractionation of large POM')
+      call self%register_diagnostic_variable(self%id_zfezoo, 'fezoo', 'nmol Fe m-3 s-1', 'iron recycling rate')
+      call self%register_diagnostic_variable(self%id_zgrazing, 'graz', 'mol C m-3 s-1', 'grazing')
+      call self%register_diagnostic_variable(self%id_zfrac, 'zfrac', 'mol C m-3 s-1', 'fractionation of large POM')
+      call self%register_diagnostic_variable(self%id_pcal, 'pcal', 'mol m-3 s-1', 'calcite production')
+      call self%add_to_aggregate_variable(calcite_production, self%id_pcal)
 
       call self%register_state_dependency(self%id_no3, 'no3', 'mol C L-1', 'nitrate')
       call self%register_state_dependency(self%id_nh4, 'nh4', 'mol C L-1', 'ammonium')
@@ -197,24 +199,25 @@ contains
          zfoodlim  = MAX( 0. , zfood - min(self%xthresh, 0.5_rk * zfood) )                                               ! Jorn: 2nd term in Eq 26a
          zdenom    = zfoodlim / ( self%xkgraz + zfoodlim )
          zdenom2   = zdenom / ( zfood + rtrn )
-         zgraze    = self%grazrat * xstep * tgfunc2 * c * (1. - nitrfac)
+         zgraze    = self%grazrat * xstep * tgfunc2 * c * (1. - nitrfac)    ! Jorn: compared to paper (Eq 26a), (1._rk - nitrfac) factor seems to have been added
 
          zgrazp    = zgraze  * self%xprefn * zcompaph  * zdenom2     ! Jorn: ingestion of nanophytoplankton carbon
          zgrazpoc  = zgraze  * self%xprefc * zcompapoc * zdenom2     ! Jorn: ingestion of POC
          zgrazd    = zgraze  * self%xprefd * zcompadi  * zdenom2     ! Jorn: ingestion of diatom carbon
-         zgrazz    = zgraze  * self%xprefd * zcompaz   * zdenom2     ! Jorn: ingestion of microzooplankotn carbon
+         zgrazz    = zgraze  * self%xprefd * zcompaz   * zdenom2     ! Jorn: ingestion of microzooplankton carbon
 
+         ! Jorn: compute specific loss rates for prey carbon, and apply those to prey iron too
          zgrazpf   = zgrazp    * nfe / (phy + rtrn)   ! Jorn: ingestion of nanophytoplankton Fe
          zgrazpof  = zgrazpoc  * sfe / (poc + rtrn)   ! Jorn: ingestion of POFe
          zgrazsf   = zgrazd    * dfe / (dia + rtrn)   ! Jorn: ingestion of diatom Fe
 
          ! Flux feeding on GOC
          ! ----------------------------------
-         zgrazffeg = self%grazflux  * xstep * wsgoc      &  ! Jorn: sinking velocity wsgoc should be m d-1!
+         zgrazffeg = self%grazflux  * xstep * wsgoc      &  ! Jorn: Eq 29b but with added factor (1._rk - nitrfac). NB sinking velocity wsgoc should be m d-1!
          &           * tgfunc2 * goc * c &
          &           * (1._rk - nitrfac)
          zgrazfffg = zgrazffeg * bfe / (goc + rtrn)
-         zgrazffep = self%grazflux  * xstep *  wspoc     &  ! Jorn: sinking velocity wspoc should be m d-1!
+         zgrazffep = self%grazflux  * xstep *  wspoc     &  ! Jorn: Eq 29a but with added factor (1._rk - nitrfac). NB sinking velocity wsgoc should be m d-1!
          &           * tgfunc2 * poc * c &
          &           * (1._rk - nitrfac)
          zgrazfffp = zgrazffep * sfe / (poc + rtrn)
@@ -232,7 +235,7 @@ contains
          &          * ( 0.2_rk + 3.8_rk * zratio2 / ( 1._rk**2 + zratio2 ) )
          zfracfe   = zfrac * bfe / (goc + rtrn)
 
-         ! Jorn: scale potential ingestion due to flux feeding with th rpoprotion of predators that is filter-feeding
+         ! Jorn: scale potential ingestion due to flux feeding with the proprotion of predators that is filter-feeding
          zgrazffep = zproport * zgrazffep
          zgrazffeg = zproport * zgrazffeg
          zgrazfffp = zproport * zgrazfffp
@@ -243,7 +246,7 @@ contains
          zgraztotn = zgrazp * quotan + zgrazd * quotad + zgrazpoc + zgrazz + zgrazffep + zgrazffeg ! Jorn: total ingestion of nitrogen, already expressed in carbon units (i.e. relative to rno3)
 
          ! Grazing by microzooplankton
-         _SET_DIAGNOSTIC_(self%id_zgrazing, zgraztotc)
+         _SET_DIAGNOSTIC_(self%id_zgrazing, zgraztotc * 1e3_rk)
 
          ! Microzooplankton efficiency. 
          ! We adopt a formulation proposed by Mitra et al. (2007)
@@ -256,16 +259,16 @@ contains
          zgrasrat  = ( zgraztotf + rtrn ) / ( zgraztotc + rtrn )  ! Jorn: Fe : C ratio in ingested prey
          !write (*,*) zgraztotf, zgraztotc, rtrn
          zgrasratn = ( zgraztotn + rtrn ) / ( zgraztotc + rtrn )  ! Jorn: N : C ratio in ingested prey, but N already expressed in C units
-         zepshert  =  MIN( 1._rk, zgrasratn, zgrasrat / self%ferat)  ! Jorn: maximum rate of biomass production, derived from incoming C, N, Fe
+         zepshert  =  MIN( 1._rk, zgrasratn, zgrasrat / self%ferat)  ! Jorn: Eq 27a, maximum rate of biomass production, derived from incoming C, N, Fe
          zbeta     = MAX(0._rk, (self%epsher - self%epshermin) )
          zepsherf  = self%epshermin + zbeta / ( 1.0_rk + 0.04E6_rk * 12._rk * zfood * zbeta )
          zepsherq  = 0.5_rk + (1.0_rk - 0.5_rk) * zepshert * ( 1.0_rk + 1.0_rk ) / ( zepshert + 1.0_rk )
          zepsherv  = zepsherf * zepshert * zepsherq   ! Jorn: gross growth efficiency 
 
 !         zgrafer   = zgraztotc * MAX( 0._rk , ( 1._rk - self%unass ) * zgrasrat - self%ferat * zepsherv ) 
-         zgrafer   = ( 1._rk - self%unass ) * zgraztotf - self%ferat * zepsherv * zgraztotc &
+         zgrafer   = ( 1._rk - self%unass ) * zgraztotf - self%ferat * zepsherv * zgraztotc &  ! Jorn: total dissolved Fe waste (organic + inorganic)
          &         + self%ferat * self%xdismort * ztortz ! Jorn: Eq30b. this line for mesozoo only (xdismort=0 otherwise), ztortz is quadratic mortality
-         zgrarem   = zgraztotc * ( 1._rk - zepsherv - self%unass ) &
+         zgrarem   = zgraztotc * ( 1._rk - zepsherv - self%unass ) &   ! Jorn: total dissolved C/N/P waste (organic + inorganic)
          &         + self%xdismort * ztortz ! Jorn: Eq30b. this line for mesozoo only (xdismort=0 otherwise), ztortz is quadratic mortality
 
          !  Update of the TRA arrays
@@ -282,7 +285,7 @@ contains
          !
          _ADD_SOURCE_(self%id_oxy, - o2ut * zgrarsig)
          _ADD_SOURCE_(self%id_fer, + zgrafer)
-         _SET_DIAGNOSTIC_(self%id_zfezoo, zgrafer)
+         _SET_DIAGNOSTIC_(self%id_zfezoo, zgrafer * 1e12_rk)
          !prodpoc(ji,jj,jk)   = prodpoc(ji,jj,jk) + zgrapoc
          _ADD_SOURCE_(self%id_dic, zgrarsig)
          _ADD_SOURCE_(self%id_tal, rno3 * zgrarsig)
@@ -290,7 +293,7 @@ contains
          !   Update the arrays TRA which contain the biological sources and sinks
          !   --------------------------------------------------------------------
          zmortz = ztortz + zrespz
-         zmortzgoc = (1._rk - self%xdismort) * ztortz + zrespz  ! Jorn: mortality directed to POM pool (as opposed to dissolved pools)
+         zmortzgoc = (1._rk - self%xdismort) * ztortz + zrespz  ! Jorn: Eq 30a: mortality directed to POM pool (as opposed to dissolved pools). TODO! this currently also includes the biomass that goes into the HTLs!
          ! Jorn: separated own biomass, prey, waste, fractionation
          _ADD_SOURCE_(self%id_c, - zmortz + zepsherv * zgraztotc )
 
@@ -320,7 +323,7 @@ contains
          _ADD_SOURCE_(self%id_sfe, + zfracfe)
          _ADD_SOURCE_(self%id_goc, - zfrac)
          _ADD_SOURCE_(self%id_bfe, - zfracfe)
-         _SET_DIAGNOSTIC_(self%id_zfrac, + zfrac)
+         _SET_DIAGNOSTIC_(self%id_zfrac, + zfrac * 1e3_rk)
          !
          ! Jorn: calcite is consumed as part of flux feeding (uptake proportional to cal/poc * poc_uptake).
          ! The fraction that dissolves in the gut (1-part) is removed from the ambient calcite pool
@@ -335,6 +338,7 @@ contains
          _ADD_SOURCE_(self%id_dic, + zgrazcal - zprcaca)
          _ADD_SOURCE_(self%id_tal, 2._rk * (zgrazcal - zprcaca))
          _ADD_SOURCE_(self%id_cal, - zgrazcal + zprcaca)
+         _SET_DIAGNOSTIC_(self%id_pcal, zprcaca * 1e3_rk)
       _LOOP_END_
    end subroutine
 

@@ -19,7 +19,7 @@ module pisces_phytoplankton
       type (type_surface_dependency_id) :: id_zstrn, id_hmld, id_heup_01, id_etot_wm
       type (type_surface_dependency_id) :: id_gphit, id_fr_i, id_xksi_
       type (type_horizontal_dependency_id) :: id_xksi
-      type (type_diagnostic_variable_id) :: id_quota, id_xfracal
+      type (type_diagnostic_variable_id) :: id_quota, id_xfracal, id_pcal
       type (type_diagnostic_variable_id) :: id_zlim1, id_zlim2, id_zlim3, id_zlim4, id_xlim
       type (type_diagnostic_variable_id) :: id_PPPHY, id_PPNEW, id_PBSi, id_PFe
       type (type_diagnostic_variable_id) :: id_zprmax, id_Mu, id_Llight
@@ -201,6 +201,8 @@ contains
       call self%register_diagnostic_variable(self%id_Mu, 'Mu', 's-1', 'realized growth rate')
       call self%register_diagnostic_variable(self%id_Llight, 'Llight', '1', 'light limitation term')
       if (self%calcify) call self%register_diagnostic_variable(self%id_xfracal, 'xfracal', '1', 'calcifying fraction')
+      call self%register_diagnostic_variable(self%id_pcal, 'pcal', 'mol m-3 s-1', 'calcite production')
+      call self%add_to_aggregate_variable(calcite_production, self%id_pcal)
 
    end subroutine initialize
 
@@ -572,9 +574,8 @@ contains
          _ADD_SOURCE_(self%id_dic, - zprcaca)
          _ADD_SOURCE_(self%id_tal, - 2._rk * zprcaca)
          _ADD_SOURCE_(self%id_cal, + zprcaca)
-         !
-         !prodcal(ji,jj,jk) = prodcal(ji,jj,jk) + zprcaca  ! prodcal=prodcal(nanophy)+prodcal(microzoo)+prodcal(mesozoo)
-         !
+         _SET_DIAGNOSTIC_(self%id_pcal, zprcaca * 1e3_rk)
+
          _ADD_SOURCE_(self%id_poc, + ( 1._rk - xfraresp ) * zrespp + ( 1._rk - xfratort ) * ztortp)
          _ADD_SOURCE_(self%id_goc, + xfraresp * zrespp + xfratort * ztortp)
          !prodpoc(ji,jj,jk) = prodpoc(ji,jj,jk) + ( 1. - zfracal ) * zmortp
