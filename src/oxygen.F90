@@ -84,7 +84,7 @@ contains
          _GET_(self%id_oxy, oxy)
          _SET_DIAGNOSTIC_(self%id_chemo2, solubility(tempis, salinprac))
 
-         ! denitrification factor computed from O2 levels - Jorn: from pzlim.F90, Eq 57
+         ! denitrification factor computed from O2 levels - Jorn: from pzlim.F90, Eq 57, O2_min1 hardcoded to 6 umol/L (but paper gives 1 umol/L)
          nitrfac = MAX(  0.e0_rk, 0.4_rk * ( 6.e-6_rk  - oxy )    &
             &                                / ( self%oxymin + oxy )  )
          nitrfac = MIN( 1._rk, nitrfac )
@@ -126,7 +126,7 @@ contains
 
          ! Compute the piston velocity for O2 and CO2
          zkgwan = 0.251_rk * zws
-         zkgwan = zkgwan * xconv * ( 1._rk - fr_i )
+         zkgwan = zkgwan * xconv * ( 1._rk - fr_i )   ! oxygen equivalent of Eq 82
 
          zkgo2 = zkgwan * SQRT( 660._rk/ zsch_o2 )
 

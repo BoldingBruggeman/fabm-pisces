@@ -80,7 +80,7 @@ contains
       call self%register_diagnostic_variable(self%id_remin, 'remin', 'mol N L-1 s-1', 'remineralization')
       call self%register_diagnostic_variable(self%id_denit, 'denit', 'mol N L-1 s-1', 'denitrification')
       call self%register_diagnostic_variable(self%id_febact, 'febact', 'mol Fe L-1 s-1', 'bacterial uptake of Fe')
-      call self%register_diagnostic_variable(self%id_blim, 'blim', 'umol C L-1', 'effective bacterial biomass for iron uptake')
+      call self%register_diagnostic_variable(self%id_blim, 'blim', '-', 'bacterial limitation of remineralization')
    end subroutine initialize
 
    subroutine do(self, _ARGUMENTS_DO_)
@@ -116,12 +116,12 @@ contains
          xnanono3 = no3 * self%concnh4 * zdenom                              ! Jorn: Eq 34h
          xnanonh4 = nh4 * self%concno3 * zdenom                              ! Jorn: Eq 34g
          !
-         zlim1    = xnanono3 + xnanonh4
+         zlim1    = xnanono3 + xnanonh4                  ! Jorn: Eq 34f
          zlim2    = po4 / ( po4 + self%concnh4 )         ! Jorn: Eq 34e
          zlim3    = fer / ( self%concfe + fer )          ! Jorn: Eq 34d
          zlim4    = doc / ( self%xkdoc   + doc )         ! Jorn: Eq 34b
-         xlimbacl = MIN( zlim1, zlim2, zlim3 )           ! Jorn: Eq 34c
-         xlimbac  = MIN( zlim1, zlim2, zlim3 ) * zlim4   ! Jorn: Eq 34a
+         xlimbacl = MIN( zlim1, zlim2, zlim3 )           ! Jorn: Eq 34c, nutrient limitation, but uses total nitrogen limitation rather than ammonium-only limitation as in paper (but that likely is a typo)
+         xlimbac  = MIN( zlim1, zlim2, zlim3 ) * zlim4   ! Jorn: Eq 34a, nutrient and substrate limitation
 
          ! denitrification factor computed from NO3 levels
          nitrfac2 = MAX( 0.e0_rk,       ( 1.E-6_rk - no3 )  &
@@ -176,8 +176,8 @@ contains
          _ADD_SOURCE_(self%id_fer, - zbactfer*0.33_rk)
          _ADD_SOURCE_(self%id_sfe, + zbactfer*0.25_rk)
          _ADD_SOURCE_(self%id_bfe, + zbactfer*0.08_rk)
+         _SET_DIAGNOSTIC_(self%id_febact, zbactfer * 0.33_rk)   ! Jorn: the remaining fraction of Fe taken up by bacteria ends is no longer tracked (non-conservative loss!)
          blim      = xlimbacl  * zdepbac / 1.e-6_rk * zdepprod
-         _SET_DIAGNOSTIC_(self%id_febact, zbactfer * 0.33_rk)
          _SET_DIAGNOSTIC_(self%id_blim, blim)
 
       _LOOP_END_

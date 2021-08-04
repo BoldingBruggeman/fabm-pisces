@@ -41,7 +41,7 @@ contains
       call self%register_diagnostic_variable(self%id_scav, 'scav', 'mol Fe L-1 s-1', 'scavenging')
       call self%register_diagnostic_variable(self%id_coll, 'coll', 'mol Fe L-1 s-1', 'colloidal pumping of FeL')
       call self%register_diagnostic_variable(self%id_Fe3, 'Fe3', 'nmol Fe L-1', 'iron III concentration')
-      call self%register_diagnostic_variable(self%id_FeL1, 'FeL1', 'nmol L-1', 'complexed Iron concentration with L1')
+      call self%register_diagnostic_variable(self%id_FeL1, 'FeL1', 'nmol L-1', 'complexed iron concentration with L1')
       call self%register_diagnostic_variable(self%id_zTL1, 'zTL1', 'nmol L-1', 'total L1 concentration')
 
       call self%register_dependency(self%id_doc, 'doc', 'mol C L-1', 'dissolved organic carbon')
@@ -132,9 +132,9 @@ contains
          ! Fe' is the root of a 2nd order polynom
          zFe3 = ( -( 1. + zfesatur * zkeq - zkeq * ztfe )               &
             &              + SQRT( ( 1. + zfesatur * zkeq - zkeq * ztfe )**2       &
-            &              + 4. * ztfe * zkeq) ) / ( 2. * zkeq )    ! Jorn: Eq65
-         zFe3 = zFe3 * 1E9                    ! Jorn: free inorganic iron
-         zFeL1 = MAX( 0., fer * 1E9 - zFe3 )  ! Jorn: "complexed" iron
+            &              + 4. * ztfe * zkeq) ) / ( 2. * zkeq )    ! Jorn: Eq 65
+         zFe3 = zFe3 * 1E9                    ! Jorn: free inorganic iron (nmol/L)
+         zFeL1 = MAX( 0., fer * 1E9 - zFe3 )  ! Jorn: "complexed" iron (nmol/L)
          _SET_DIAGNOSTIC_(self%id_Fe3, zFe3)
          _SET_DIAGNOSTIC_(self%id_FeL1, zFeL1)
          _SET_DIAGNOSTIC_(self%id_zTL1, zTL1)
@@ -182,7 +182,7 @@ contains
          !  ----------------------------------------------------------------
          zlam1a   = ( 0.369  * 0.3 * doc + 102.4  * poc ) * xdiss    &
                &      + ( 114.   * 0.3 * doc )
-         zaggdfea = zlam1a * xstep * zfecoll    ! Jorn: Eq 61a
+         zaggdfea = zlam1a * xstep * zfecoll    ! Jorn: Eq 61a - but Brownian POC term (a4) missing
          !
          zlam1b   = 3.53E3 * goc * xdiss
          zaggdfeb = zlam1b * xstep * zfecoll    ! Jorn: Eq 61b

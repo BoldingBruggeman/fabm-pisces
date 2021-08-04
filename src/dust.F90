@@ -66,7 +66,7 @@ contains
          ENDIF
          zirondep = solub  * dust * self%mfrac / 55.85 + 3.e-10 * r1_ryyss   ! Jorn: dropped division by e3t_n because FABM wants flux per m2, dropped multiplication with rfact2 [time step in seconds]
          zsidep  = 8.8 * 0.075 * dust * self%mfrac / 28.1      ! Jorn: 28.1 is atomic mass of Si
-         zpdep = 0.1 * 0.021 * dust * self%mfrac / 31. / po4r  ! Jorn: solubility of P in dust is assumed 10%, 31 is atomic mass of P
+         zpdep = 0.1 * 0.021 * dust * self%mfrac / 31. / po4r  ! Jorn: solubility of P in dust is assumed 10%, 31 is atomic mass of P. 0.021 * default mfrac (0.035) approximates the 750 ppm P content of dust given in the paper
          _ADD_SURFACE_FLUX_(self%id_sil, zsidep)
          _ADD_SURFACE_FLUX_(self%id_po4, zpdep)
          _ADD_SURFACE_FLUX_(self%id_fer, zirondep)
@@ -92,7 +92,7 @@ contains
 
          _SET_DIAGNOSTIC_(self%id_zdust, zdust)
 
-         zirondep = zdust * self%mfrac * 0.03 / 55.85 / (270.* rday)  ! Jorn : 0.03 is likely the dissolution rate in d-1 (though paper gives 0.01 d-1) - but what is the 270?
+         zirondep = zdust * self%mfrac * 0.03 / 55.85 / (270.* rday)  ! Jorn : 0.03 / 270 is presumably the dissolution rate in d-1 (it approximates the value of 0.01 % per day given in the paper)
          zpdep    = zirondep * 0.023
          !                                              ! Iron solubilization of particles in the water column
          _ADD_SOURCE_(self%id_po4, + zpdep   )          ! Jorn: TODO this should exclude the top layer

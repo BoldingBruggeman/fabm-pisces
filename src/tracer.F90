@@ -29,23 +29,23 @@ module pisces_tracer
       procedure :: do         => calcite_dissolution_do
    end type
 
-   type, extends(type_base_model) :: type_pisces_silicate_dissolution
+   type, extends(type_base_model) :: type_pisces_silica_dissolution
       type (type_state_variable_id)      :: id_gsi, id_sil
       type (type_diagnostic_variable_id) :: id_remin
       type (type_dependency_id)          :: id_zsiremin
    contains
-      procedure :: initialize => silicate_dissolution_initialize
-      procedure :: do         => silicate_dissolution_do
+      procedure :: initialize => silica_dissolution_initialize
+      procedure :: do         => silica_dissolution_do
    end type
 
-   type, extends(type_base_model) :: type_pisces_silicate_dissolution_rate
+   type, extends(type_base_model) :: type_pisces_silica_dissolution_rate
       type (type_diagnostic_variable_id) :: id_zsiremin
       type (type_dependency_id)          :: id_tem, id_gdept_n, id_ws, id_sil, id_e3t_n
       type (type_surface_dependency_id)  :: id_hmld, id_heup_01
       real(rk) :: xsilab, xsiremlab, xsirem
    contains
-      procedure :: initialize => silicate_dissolution_rate_initialize
-      procedure :: do_column  => silicate_dissolution_rate_do_column
+      procedure :: initialize => silica_dissolution_rate_initialize
+      procedure :: do_column  => silica_dissolution_rate_do_column
    end type
 
 contains
@@ -55,8 +55,8 @@ contains
       integer,                    intent(in)            :: configunit
 
       character(len=64) :: name
-      class (type_pisces_calcite_dissolution),  pointer :: calcite_dissolution
-      class (type_pisces_silicate_dissolution), pointer :: silicate_dissolution
+      class (type_pisces_calcite_dissolution), pointer :: calcite_dissolution
+      class (type_pisces_silica_dissolution),  pointer :: silicate_dissolution
 
       ! Jorn: default initial values taken from trcice_pisces.F90, global prescribed concentrations
       call self%get_parameter(name, 'type', '', 'type of tracer (nitrate, ammonium, phosphate)')
@@ -215,11 +215,11 @@ contains
    end subroutine
 
 
-   subroutine silicate_dissolution_initialize(self, configunit)
-      class (type_pisces_silicate_dissolution), intent(inout), target :: self
-      integer,                                  intent(in)            :: configunit
+   subroutine silica_dissolution_initialize(self, configunit)
+      class (type_pisces_silica_dissolution), intent(inout), target :: self
+      integer,                                intent(in)            :: configunit
 
-      class (type_pisces_silicate_dissolution_rate), pointer :: dissolution_rate
+      class (type_pisces_silica_dissolution_rate), pointer :: dissolution_rate
       character(len=64) :: name
 
       allocate(dissolution_rate)
@@ -237,8 +237,8 @@ contains
       call self%request_coupling(self%id_zsiremin, 'rate/zsiremin')
    end subroutine
 
-   subroutine silicate_dissolution_do(self, _ARGUMENTS_DO_)
-      class (type_pisces_silicate_dissolution), intent(in) :: self
+   subroutine silica_dissolution_do(self, _ARGUMENTS_DO_)
+      class (type_pisces_silica_dissolution), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
       real(rk) :: gsi, zsiremin, zosil
@@ -255,9 +255,9 @@ contains
       _LOOP_END_
    end subroutine
 
-   subroutine silicate_dissolution_rate_initialize(self, configunit)
-      class (type_pisces_silicate_dissolution_rate), intent(inout), target :: self
-      integer,                                       intent(in)            :: configunit
+   subroutine silica_dissolution_rate_initialize(self, configunit)
+      class (type_pisces_silica_dissolution_rate), intent(inout), target :: self
+      integer,                                     intent(in)            :: configunit
 
       character(len=64) :: name
 
@@ -272,8 +272,8 @@ contains
       call self%register_dependency(self%id_e3t_n, standard_variables%cell_thickness)
    end subroutine
 
-   subroutine silicate_dissolution_rate_do_column(self, _ARGUMENTS_DO_COLUMN_)
-      class (type_pisces_silicate_dissolution_rate), intent(in) :: self
+   subroutine silica_dissolution_rate_do_column(self, _ARGUMENTS_DO_COLUMN_)
+      class (type_pisces_silica_dissolution_rate), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_COLUMN_
 
       real(rk) :: heup_01, hmld, zdep
@@ -284,8 +284,8 @@ contains
       _GET_SURFACE_(self%id_hmld, hmld)
       zdep = MAX( hmld, heup_01 )
 
-      zfacsi = self%xsilab
-      zfacsib = self%xsilab / ( 1.0 - self%xsilab )
+      zfacsi = self%xsilab                           ! Jorn: labile fraction of frustule (1)
+      zfacsib = self%xsilab / ( 1.0 - self%xsilab )  ! Jorn: ratio of labile : non-labile fractions of frustule (1)
       _DOWNWARD_LOOP_BEGIN_
          _GET_(self%id_gdept_n, gdept_n)
          _GET_(self%id_tem, tem)

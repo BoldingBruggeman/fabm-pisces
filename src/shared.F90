@@ -20,7 +20,7 @@ module pisces_shared
 
    real(rk), parameter :: xstep = r1_rday
 
-   real(rk), parameter :: nyear_len = 365._rk  ! Jorn - should be made dynamic to account for leap years, different calendars, etc.
+   real(rk), parameter :: nyear_len = 365._rk  ! Jorn - TODO should be made dynamic to account for leap years, different calendars, etc.
 
    type (type_universal_standard_variable), parameter :: total_chlorophyll = type_universal_standard_variable(name='total_chlorophyll', units='mg m-3', aggregate_variable=.true.)
    type (type_interior_standard_variable), parameter :: shear_rate = type_interior_standard_variable(name='shear_rate', units='s-1')

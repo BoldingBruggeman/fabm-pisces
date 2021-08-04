@@ -95,10 +95,10 @@ contains
       class (type_pisces_carbonate_chemistry), intent(inout), target :: self
       integer,                                 intent(in)            :: configunit
 
-      call self%register_state_variable(self%id_dic, 'DIC', 'mol C/L', 'dissolved inorganic carbon concentration', &
+      call self%register_state_variable(self%id_dic, 'DIC', 'mol C L-1', 'dissolved inorganic carbon concentration', &
          standard_variable=standard_variables%mole_concentration_of_dissolved_inorganic_carbon, initial_value=1.99e-3_rk)
       call self%add_to_aggregate_variable(standard_variables%total_carbon, self%id_dic, scale_factor=1e6_rk)
-      call self%register_state_variable(self%id_tal, 'Alkalini', 'mol/L', 'alkalinity concentration', &
+      call self%register_state_variable(self%id_tal, 'Alkalini', 'mol L-1', 'alkalinity concentration', &
          standard_variable=standard_variables%alkalinity_expressed_as_mole_equivalent, initial_value=2.31e-3_rk)
 
       call self%register_diagnostic_variable(self%id_PH, 'PH', '1', 'pH', standard_variable=standard_variables%ph_reported_on_total_scale)
@@ -416,7 +416,7 @@ contains
 
          ! Compute the piston velocity for O2 and CO2
          zkgwan = 0.251_rk * zws
-         zkgwan = zkgwan * xconv * ( 1._rk - fr_i )
+         zkgwan = zkgwan * xconv * ( 1._rk - fr_i )   ! Jorn: Eq 82
 
          zkgco2 = zkgwan * SQRT( 660._rk / zsch_co2 )
 

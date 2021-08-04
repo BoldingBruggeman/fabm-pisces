@@ -266,7 +266,7 @@ contains
          zepsherv  = zepsherf * zepshert * zepsherq   ! Jorn: gross growth efficiency 
 
 !         zgrafer   = zgraztotc * MAX( 0._rk , ( 1._rk - self%unass ) * zgrasrat - self%ferat * zepsherv ) 
-         zgrafer   = ( 1._rk - self%unass ) * zgraztotf - self%ferat * zepsherv * zgraztotc &  ! Jorn: total dissolved Fe waste (organic + inorganic)
+         zgrafer   = ( 1._rk - self%unass ) * zgraztotf - self%ferat * zepsherv * zgraztotc &  ! Jorn: total dissolved Fe waste (organic + inorganic). TODO: revert to original eq above? non-conservative!
          &         + self%ferat * self%xdismort * ztortz ! Jorn: Eq30b. this line for mesozoo only (xdismort=0 otherwise), ztortz is quadratic mortality
          zgrarem   = zgraztotc * ( 1._rk - zepsherv - self%unass ) &   ! Jorn: total dissolved C/N/P waste (organic + inorganic)
          &         + self%xdismort * ztortz ! Jorn: Eq30b. this line for mesozoo only (xdismort=0 otherwise), ztortz is quadratic mortality

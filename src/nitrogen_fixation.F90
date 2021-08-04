@@ -34,7 +34,7 @@ contains
       call self%get_parameter(self%concnno3, 'concnno3', 'mol C L-1', 'nitrate half-saturation constant for phytoplankton', default=1.e-6_rk)
       call self%get_parameter(self%concdnh4, 'concdnh4', 'mol C L-1', 'ammonium half-saturation constant for diatoms', default=3.E-7_rk)
 
-      call self%register_diagnostic_variable(self%id_Nfix, 'Nfix', 'mol N L-1 s-1', 'nitrogen fixation')
+      call self%register_diagnostic_variable(self%id_Nfix, 'Nfix', 'mol N m-3 s-1', 'nitrogen fixation')
 
       call self%register_state_dependency(self%id_no3, 'no3', 'mol C L-1', 'nitrate')
       call self%register_state_dependency(self%id_nh4, 'nh4', 'mol C L-1', 'ammonium')
@@ -93,20 +93,21 @@ contains
          nitrpot =  zmudia * r1_rday * zfact * MIN( ztrfer, ztrdp ) * zlight  ! Jorn: Eq 58b
 
          zfact = nitrpot * self%nitrfix
-         _ADD_SOURCE_(self%id_nh4, + zfact / 3.0)
+         _ADD_SOURCE_(self%id_nh4, + zfact / 3.0)                   ! 1/3 of fixation directed to ambient inorganic dissolved pools
          _ADD_SOURCE_(self%id_tal, + rno3 * zfact / 3.0)
-         _ADD_SOURCE_(self%id_po4, - zfact * 2.0 / 3.0)
-         _ADD_SOURCE_(self%id_doc, + zfact * 1.0 / 3.0)
-         _ADD_SOURCE_(self%id_poc, + zfact * 1.0 / 3.0 * 2.0 / 3.0)
-         _ADD_SOURCE_(self%id_goc, + zfact * 1.0 / 3.0 * 1.0 / 3.0)
+         _ADD_SOURCE_(self%id_po4, - zfact * 2.0 / 3.0)             ! total P needed for fixation, minus 1/3 returned to ambient inorganic dissolved pool [PO4]
+         _ADD_SOURCE_(self%id_doc, + zfact * 1.0 / 3.0)             ! 1/3 of fixation directed to DOM pool (NB this pool lacks Fe, so corresponding iron flux is added to *inorganic* Fe pool)
+         _ADD_SOURCE_(self%id_poc, + zfact * 1.0 / 3.0 * 2.0 / 3.0) ! remaining 1/3 of fixation is sent to POM pool, 2/3 of which small
+         _ADD_SOURCE_(self%id_goc, + zfact * 1.0 / 3.0 * 1.0 / 3.0) ! remaining 1/3 of fixation is sent to POM pool, 1/3 of which large
          _ADD_SOURCE_(self%id_oxy, + ( o2ut + o2nit ) * zfact * 2.0 / 3.0 + o2nit * zfact / 3.0)
-         _ADD_SOURCE_(self%id_biron, - 30E-6 * zfact * 1.0 / 3.0)
-         _ADD_SOURCE_(self%id_sfe, + 30E-6 * zfact * 1.0 / 3.0 * 2.0 / 3.0)
-         _ADD_SOURCE_(self%id_bfe, + 30E-6 * zfact * 1.0 / 3.0 * 1.0 / 3.0)
+         _ADD_SOURCE_(self%id_biron, - 30E-6 * zfact * 1.0 / 3.0)   ! total Fe needed for fixation [hardcoded Fe/C ratio of 30 umol Fe/mol C], minus 2/3 returned to ambient dissolved pools
+         _ADD_SOURCE_(self%id_sfe, + 30E-6 * zfact * 1.0 / 3.0 * 2.0 / 3.0) ! remaining 1/3 of fixation is sent to POM pool, 2/3 of which small
+         _ADD_SOURCE_(self%id_bfe, + 30E-6 * zfact * 1.0 / 3.0 * 1.0 / 3.0) ! remaining 1/3 of fixation is sent to POM pool, 1/3 of which large
+
          _ADD_SOURCE_(self%id_biron, + 0.002 * 4E-10 * zsoufer / rday)   ! Jorn : dropped multiplication with rfact2 [time step in seconds]
          _ADD_SOURCE_(self%id_po4, + self%concdnh4 / ( self%concdnh4 + po4 )  * 0.001 * doc * xstep)   ! Jorn: ???? seems to have nothing to do with N2 fixation? adsorption to DOC? why diatom half sat?
 
-         _SET_DIAGNOSTIC_(self%id_Nfix, zfact * rno3)
+         _SET_DIAGNOSTIC_(self%id_Nfix, zfact * rno3 * 1.e3_rk)
       _LOOP_END_
    end subroutine
 end module

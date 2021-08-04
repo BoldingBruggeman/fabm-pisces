@@ -500,7 +500,7 @@ contains
             zlim1 =  ( no3 * self%concnh4 + nh4 * self%concno3 )    &
                &   / ( self%concno3 * self%concnh4 + self%concnh4 * no3 + self%concno3 * nh4 ) 
             zlim2  = po4 / ( po4 + self%concnh4 )
-            zlim3  = fe / ( fe +  5.E-11_rk   )
+            zlim3  = fe / ( fe +  5.E-11_rk   )   ! iron half saturation hardcoded at 0.05 nmol/L (much lower than 1-3 nmol/L used for nanophytoplankotn and diatoms!)
             ztem1  = MAX( 0._rk, tem )
             ztem2  = tem - 10._rk
             zetot1 = MAX( 0._rk, etot_ndcy - 1._rk) / ( 4._rk + etot_ndcy ) 
