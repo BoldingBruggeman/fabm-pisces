@@ -29,7 +29,6 @@ A `fabm.yaml` file with the PISCES configuration is provided under `<PISCESDIR>/
 ## To do
 
 * hook up POC lability parameterization (`p4zpoc.F90`) to consumption and production terms (currently zero)
-* use improved initial estimate for H+ with ahini_for_at (`p4zche.F90`)
 * add source of iron due to sea ice melt (`p4zsed.F90`, `ln_ironice`)
 * add iron input from hydrothermal vents - implement in TOP-FABM or in PISCES code? (`p4zsed.F90`, `ln_hydrofe`)
 * enable iron input fom sediments throughout the column using coast and island mask (now restricted to bottom only)

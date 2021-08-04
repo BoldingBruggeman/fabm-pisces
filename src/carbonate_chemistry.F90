@@ -11,7 +11,7 @@ module pisces_carbonate_chemistry
    type, extends(type_base_model), public :: type_pisces_carbonate_chemistry
       type (type_state_variable_id) :: id_dic
       type (type_state_variable_id) :: id_tal
-      type (type_dependency_id) :: id_tempis, id_salinprac, id_rhop, id_sil, id_po4, id_zpres, id_h2co3
+      type (type_dependency_id) :: id_tempis, id_salinprac, id_rhop, id_sil, id_po4, id_zpres, id_h2co3, id_hi_old
       type (type_surface_dependency_id) :: id_wndm, id_fr_i, id_patm, id_satmco2
       type (type_diagnostic_variable_id) :: id_ph, id_hi, id_CO3, id_CO3sat, id_zomegaca, id_zh2co3
       type (type_surface_diagnostic_variable_id) :: id_Cflx, id_Kg, id_Dpco2, id_pCO2sea
@@ -124,6 +124,7 @@ contains
       call self%register_dependency(self%id_sil, 'sil', 'mol Si L-1', 'silicate')
       call self%register_dependency(self%id_satmco2,standard_variables%mole_fraction_of_carbon_dioxide_in_air)
       call self%register_dependency(self%id_h2co3, 'zh2co3', 'mol L-1', 'carbonic acid concentration')
+      call self%register_dependency(self%id_hi_old, 'hi', 'mol L-1', 'previous hydrogen ion concentration')
    end subroutine initialize
 
    subroutine do(self, _ARGUMENTS_DO_)
@@ -337,7 +338,8 @@ contains
          sulfat = zst
          fluorid = zft 
 
-         p_hini = -1.
+         _GET_(self%id_hi_old, p_hini)
+         if (p_hini < 0._rk) call ahini_for_at(rhop, dic, tal, borat, ak13, ak23, akb3, p_hini)
          call solve_at_general( rhop, dic, tal, po4, sil, borat, sulfat, fluorid, &
             ak13, ak23, akb3, akw3, aks3, akf3, ak1p3, ak2p3, ak3p3, aksi3, p_hini, zhi )
          hi = zhi * rhop / 1000.    ! from p4zlys.F90
@@ -440,6 +442,61 @@ contains
          _SET_SURFACE_DIAGNOSTIC_(self%id_pCO2sea, zh2co3 / (chemc(1) + rtrn))
       _SURFACE_LOOP_END_
    end subroutine
+
+   elemental SUBROUTINE ahini_for_at(rhop, dic, tal, borat, ak13, ak23, akb3, p_hini)
+      !!---------------------------------------------------------------------
+      !!                     ***  ROUTINE ahini_for_at  ***
+      !!
+      !! Subroutine returns the root for the 2nd order approximation of the
+      !! DIC -- B_T -- A_CB equation for [H+] (reformulated as a cubic 
+      !! polynomial) around the local minimum, if it exists.
+      !! Returns * 1E-03_wp if p_alkcb <= 0
+      !!         * 1E-10_wp if p_alkcb >= 2*p_dictot + p_bortot
+      !!         * 1E-07_wp if 0 < p_alkcb < 2*p_dictot + p_bortot
+      !!                    and the 2nd order approximation does not have 
+      !!                    a solution
+      !!---------------------------------------------------------------------
+      REAL(rk), INTENT(IN)   ::  rhop, dic, tal, borat, ak13, ak23, akb3
+      REAL(rk), INTENT(OUT)  ::  p_hini
+      REAL(rk)  ::  zca1, zba1
+      REAL(rk)  ::  zd, zsqrtd, zhmin
+      REAL(rk)  ::  za2, za1, za0
+      REAL(rk)  ::  p_dictot, p_bortot, p_alkcb 
+      !!---------------------------------------------------------------------
+
+      p_alkcb  = tal * 1000. / (rhop + rtrn)
+      p_dictot = dic * 1000. / (rhop + rtrn)
+      p_bortot = borat
+      IF (p_alkcb <= 0.) THEN
+         p_hini = 1.e-3
+      ELSEIF (p_alkcb >= (2.*p_dictot + p_bortot)) THEN
+         p_hini = 1.e-10_rk
+      ELSE
+         zca1 = p_dictot/( p_alkcb + rtrn )
+         zba1 = p_bortot/ (p_alkcb + rtrn )
+   ! Coefficients of the cubic polynomial
+         za2 = aKb3*(1. - zba1) + ak13*(1.-zca1)
+         za1 = ak13*akb3*(1. - zba1 - zca1)    &
+         &     + ak13*ak23*(1. - (zca1+zca1))
+         za0 = ak13*ak23*akb3*(1. - zba1 - (zca1+zca1))
+                                 ! Taylor expansion around the minimum
+         zd = za2*za2 - 3.*za1   ! Discriminant of the quadratic equation
+                                 ! for the minimum close to the root
+
+         IF(zd > 0.) THEN        ! If the discriminant is positive
+            zsqrtd = SQRT(zd)
+            IF(za2 < 0) THEN
+               zhmin = (-za2 + zsqrtd)/3.
+            ELSE
+               zhmin = -za1/(za2 + zsqrtd)
+            ENDIF
+            p_hini = zhmin + SQRT(-(za0 + zhmin*(za1 + zhmin*(za2 + zhmin)))/zsqrtd)
+         ELSE
+            p_hini = 1.e-7
+         ENDIF
+      !
+      ENDIF
+   END SUBROUTINE ahini_for_at
 
    elemental SUBROUTINE solve_at_general( rhop, dic, tal, po4, sil, borat, sulfat, fluorid, &
       ak13, ak23, akb3, akw3, aks3, akf3, ak1p3, ak2p3, ak3p3, aksi3, p_hini, zhi )
