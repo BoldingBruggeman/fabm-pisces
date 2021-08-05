@@ -12,6 +12,8 @@ add_library(fabm_models_pisces OBJECT
             shared.F90
             dom_remineralization.F90
             pom_remineralization.F90
+            silica_dissolution.F90
+            calcite_dissolution.F90
             aggregation.F90
             nitrification.F90
             nitrogen_fixation.F90
