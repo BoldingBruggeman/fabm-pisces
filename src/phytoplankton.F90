@@ -173,18 +173,20 @@ contains
       call self%register_state_dependency(self%id_nh4, 'nh4', 'mol C L-1', 'ammonium')
       call self%register_state_dependency(self%id_po4, 'po4', 'mol C L-1', 'phosphate')
       call self%register_state_dependency(self%id_biron, 'biron', 'mol Fe L-1', 'bioavailable iron')
+      call self%register_state_dependency(self%id_sil, 'sil', 'mol Si L-1', 'silicate')
       call self%register_state_dependency(self%id_doc, 'doc', 'mol C L-1', 'dissolved organic carbon')
       call self%register_state_dependency(self%id_dic, standard_variable=standard_variables%mole_concentration_of_dissolved_inorganic_carbon)
       call self%register_state_dependency(self%id_tal, standard_variables%alkalinity_expressed_as_mole_equivalent)
       call self%register_state_dependency(self%id_oxy, 'oxy', 'mol O2 L-1', 'oxygen')
 
       if (self%diatom) then
-         call self%register_state_dependency(self%id_sil, 'sil', 'mol Si L-1', 'silicate')
          call self%register_dependency(self%id_gphit, standard_variables%latitude)
          call self%register_dependency(self%id_xksi_, 'xksi', 'mol Si L-1', 'instantaneous silicate half-saturation constant')
          call silicate_half_saturation%request_coupling(silicate_half_saturation%id_sil, '../sil')
          call self%request_coupling(self%id_xksi_, 'silicate_half_saturation/xksi')
          call self%register_dependency(self%id_xksi, temporal_maximum(self%id_xksi_, period=nyear_len * rday, resolution=nyear_len * rday, missing_value=2.e-6_rk))
+      else
+         call self%request_coupling(self%id_sil, 'zero')
       end if
 
       call self%register_diagnostic_variable(self%id_quota, 'quota', 'mol N (mol C)-1', 'proxy of the N/C ratio')
@@ -281,6 +283,7 @@ contains
          _GET_(self%id_no3, no3)                  ! nitrate (mol C/L - nitrogen units multiplied with C:N ratio of biomass)
          _GET_(self%id_po4, po4)                  ! phosphate (mol C/L - phosphorus units multiplied with C:P ratio of biomass)
          _GET_(self%id_biron, biron)              ! bioavailable iron (mol Fe/L)
+         _GET_(self%id_sil, sil)                  ! ambient silicate concentration (mol Si/L)
 
          _GET_(self%id_tem, tem)                  ! temperature (degrees Celsius)
          _GET_(self%id_gdept_n, gdept_n)          ! depth (m)
@@ -293,7 +296,7 @@ contains
          _GET_SURFACE_(self%id_etot_wm, etot_wm)  ! daily mean Photosynthetically Available Radiation (W m-2) weighted by absorption per waveband, averaged over mixed/euphotic layer
          _GET_SURFACE_(self%id_fr_i, fr_i)        ! sea ice area fraction (1)
 
-         IF (gdept_n > hmld) etot_wm = etot_w
+         IF (gdept_n > hmld) etot_wm = etot_w     ! below turbocline: the experienced daily mean PAR is the actual in-situ value (not the average over the mixig layer)
 
          ! ======================================================================================
          ! Jorn: From p4zint
@@ -322,7 +325,6 @@ contains
          if (self%diatom) then
             ! Jorn: From p4zint
             _GET_SURFACE_(self%id_xksi, xksi)
-            _GET_(self%id_sil, sil)   ! ambient silicate concentration (mol Si/L)
             zlim3    = sil / ( sil + xksi )    ! Eq 11b
          else
             zlim3 = 1._rk
@@ -345,8 +347,6 @@ contains
          ! Computation of the optimal production - Jorn note conversion to 1/s
          zprmax = self%mumax0 * r1_rday * tgfunc   ! Jorn: Eq 4b in PISCES-v2 paper; NEMO-PISCES uses a hardcoded mumax0 = 0.8, which evolved from the value of 0.6 in the paper (Olivier Aumont 2021-04-21)
 
-         zmxl_fac = 0._rk ! Jorn - added to ensure zpr setting below never depends on undefined value
-
          ! Impact of the day duration and light intermittency on phytoplankton growth
          IF( etot_ndcy > 1.E-3 ) THEN
             zval = MAX( 1., zstrn )   ! Jorn: clip day length to a minimum of 1 hour
@@ -355,15 +355,13 @@ contains
             ENDIF
             zmxl_chl = zval / 24._rk  ! Jorn: from number of hours to fraction of day
             zmxl_fac = 1.5_rk * zval / ( 12._rk + zval )  ! Jorn: Eq 3a in PISCES-v2 paper - but note that time spent in euphotic layer has already been incorporated in zval! Eqs 3b-3d are not used
-         ENDIF
 
-         zpr = zprmax * zmxl_fac  ! Jorn: product of muP and f1*f2 (sort of - those have been changed) in Eq 2a, units are 1/s
+            zpr = zprmax * zmxl_fac  ! Jorn: product of muP and f1*f2 (sort of - those have been changed) in Eq 2a, units are 1/s
 
-         ! Maximum light intensity
-         !WHERE( zstrn(:,:) < 1.e0 ) zstrn(:,:) = 24. ! Jorn: seems unused???
+            ! Maximum light intensity
+            !WHERE( zstrn(:,:) < 1.e0 ) zstrn(:,:) = 24. ! Jorn: seems unused???
 
-         ! Computation of the P-I slope for nanos and diatoms (Jorn: product of alpha and chl:C)
-         IF( etot_ndcy > 1.E-3 ) THEN
+            ! Computation of the P-I slope for nanos and diatoms (Jorn: product of alpha and chl:C)
             ztn         = MAX( 0._rk, tem - 15._rk )
             zadap       = self%xadap * ztn / ( 2._rk + ztn )
             pislope = (self%pislope_s * zconc2 + self%pislope_l * zconc) * z1_trb   ! Weighted mean of PI slope (g C (g Chl)-1 d-1 (W m-2)-1) for small and large cells
@@ -380,40 +378,39 @@ contains
             !--------------------------------------------------
             zpislope = zpislopead / ( zprmax * zmxl_chl * rday + rtrn )   ! note zprmax is in 1/s and multiplied with rday to convert to d-1. Resulting units are (W m-2)-1. No divison by nutrient limitation (similar to Eq 2a replacing 2b)
             zprch = zprmax * ( 1._rk - EXP( -zpislope * etot_wm ) )       ! Units 1/s, note this uses mean PAR experienced in the euphotic layer (or 0 if below ML) - units are 1/d
-         ENDIF
 
-         !  Computation of a proxy of the N/C ratio - Jorn: this is dimensionless and thus relative to rno3 (it is not the absolute N:C!)
-         !  ---------------------------------------
-         zval = MIN( xpo4, ( xnh4 + xno3 ) )   &    ! Jorn: nitrogen and phosphate limitation, divided by light limitation
-         &      * zprmax / ( zpr + rtrn )
-         quota = MIN( 1., 0.2_rk + 0.8_rk * zval )
-         _SET_DIAGNOSTIC_(self%id_quota, quota)
+            !  Computation of a proxy of the N/C ratio - Jorn: this is dimensionless and thus relative to rno3 (it is not the absolute N:C!)
+            !  ---------------------------------------
+            zval = MIN( xpo4, ( xnh4 + xno3 ) )   &    ! Jorn: nitrogen and phosphate limitation, divided by light limitation
+            &      * zprmax / ( zpr + rtrn )
+            quota = MIN( 1., 0.2_rk + 0.8_rk * zval )
 
-         IF( etot_ndcy > 1.E-3 .and. self%diatom ) THEN
-            _GET_SURFACE_(self%id_gphit, gphit)
-               !    Si/C of diatoms - Jorn: section 4.1.5 in PISCES-v2 paper
-               !    ------------------------
-               !    Si/C increases with iron stress and silicate availability
-               !    Si/C is arbitrariliy increased for very high Si concentrations
-               !    to mimic the very high ratios observed in the Southern Ocean (silpot2)
-            zlim  = sil / ( sil + self%xksi1 )                                                                             ! Jorn Eq 23c
-            zsilim = MIN( zpr / ( zprmax + rtrn ), xlimsi )                                                                ! Jorn Eq 23a
-            zsilfac = 4.4_rk * EXP( -4.23_rk * zsilim ) * MAX( 0._rk, MIN( 1._rk, 2.2_rk * ( zlim - 0.5_rk ) )  ) + 1._rk  ! Jorn Eq 22, 23b
-            zsiborn = sil * sil * sil
-            IF (gphit < -30._rk ) THEN   ! threshold is 0 degrees in paper
-               zsilfac2 = 1._rk + 2._rk * zsiborn / ( zsiborn + self%xksi2**3 )  ! Eq 22 (last part), 23d
+            IF( self%diatom ) THEN
+               _GET_SURFACE_(self%id_gphit, gphit)
+                  !    Si/C of diatoms - Jorn: section 4.1.5 in PISCES-v2 paper
+                  !    ------------------------
+                  !    Si/C increases with iron stress and silicate availability
+                  !    Si/C is arbitrariliy increased for very high Si concentrations
+                  !    to mimic the very high ratios observed in the Southern Ocean (silpot2)
+               zlim  = sil / ( sil + self%xksi1 )                                                                             ! Jorn Eq 23c
+               zsilim = MIN( zpr / ( zprmax + rtrn ), xlimsi )                                                                ! Jorn Eq 23a
+               zsilfac = 4.4_rk * EXP( -4.23_rk * zsilim ) * MAX( 0._rk, MIN( 1._rk, 2.2_rk * ( zlim - 0.5_rk ) )  ) + 1._rk  ! Jorn Eq 22, 23b
+               zsiborn = sil * sil * sil
+               IF (gphit < -30._rk ) THEN   ! threshold is 0 degrees in paper
+                  zsilfac2 = 1._rk + 2._rk * zsiborn / ( zsiborn + self%xksi2**3 )  ! Eq 22 (last part), 23d
+               ELSE
+                  zsilfac2 = 1._rk +         zsiborn / ( zsiborn + self%xksi2**3 )  ! ??? 23d suggests this term is 1 for lat > 0
+               ENDIF
+               zysopt = self%grosip * zlim * zsilfac * zsilfac2  ! Eq 22 but it seems to miss the MIN(5.4, ...) clipping used there, realized Si / C uptake ratio
             ELSE
-               zsilfac2 = 1._rk +         zsiborn / ( zsiborn + self%xksi2**3 )  ! ??? 23d suggests this term is 1 for lat > 0
+               zysopt = 0._rk
             ENDIF
-            zysopt = self%grosip * zlim * zsilfac * zsilfac2  ! Eq 22 but it seems to miss the MIN(5.4, ...) clipping used there, realized Si / C uptake ratio
-         ENDIF
 
-         !  Mixed-layer effect on production 
-         !  Sea-ice effect on production
-         zpr = zpr * ( 1._rk - fr_i )
+            !  Mixed-layer effect on production 
+            !  Sea-ice effect on production
+            zpr = zpr * ( 1._rk - fr_i )
 
-         ! Computation of the various production terms 
-         IF( etot_ndcy > 1.E-3 ) THEN
+            ! Computation of the various production terms 
             zprorca = zpr  * xlim* c                           ! total production (mol C/L/s), dropped multiplication with rfact2 [time step in seconds]
             zpronew  = zprorca* xno3 / ( xno3 + xnh4 + rtrn )  ! Eq 8, new production (mol C/L/s)
             !
@@ -426,7 +423,7 @@ contains
 
             ! Computation of the chlorophyll production terms
             !  production terms for nanophyto. ( chlorophyll )
-            ztot = etot_wm / ( zmxl_chl + rtrn )         ! Jorn: PAR/L_day in Eq 15a
+            ztot = etot_wm / ( zmxl_chl + rtrn )         ! Jorn: PAR/L_day in Eq 15a, the divison of 24h mean PAR by day length makes it equivalent to mean PAR experienced *during the daytime*
             zprod    = rday * zprorca * zprch * xlim     ! Eq15b Note zprorca was the increment in carbon (mol C/L) over a single time step, but we divide by timestep and thus have the rate of production
             zprochl = self%chlcmin * 12._rk * zprorca       ! Jorn: first part of Eq14, increase in Chl associated with increase in carbon (using carbon production and minimum Chl:C), units are g Chl/L/s
             chlcm_n   = MIN ( self%chlcm, ( self%chlcm / (1. - 1.14 / 43.4 *tem)) * (1. - 1.14 / 43.4 * 20.))  ! temperature correction of max Chl?
@@ -457,6 +454,8 @@ contains
             zpronew = 0._rk
             zprofe = 0._rk
             zysopt = 0._rk
+            zpr = 0._rk
+            quota = 1._rk
          ENDIF
 
          !
@@ -470,6 +469,7 @@ contains
          !   ENDIF
          !ENDIF
 
+         _SET_DIAGNOSTIC_(self%id_quota, quota)
 
        !! Total primary production per year
        !IF( iom_use( "tintpp" ) .OR. ( ln_check_mass .AND. kt == nitend .AND. knt == nrdttrc )  )  &
