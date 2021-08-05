@@ -26,8 +26,6 @@ contains
       class (type_pisces_calcite_dissolution), intent(inout), target :: self
       integer,                                 intent(in)            :: configunit
 
-      character(len=64) :: name
-
       call self%get_parameter(self%kdca, 'kdca', 'month-1', 'dissolution rate constant', default=6._rk)   ! 0.197 d-1 in paper
       call self%get_parameter(self%nca, 'nca', '-', 'exponent in the dissolution rate', default=1._rk)
 
@@ -44,7 +42,6 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
       real(rk) :: cal, zomegaca, excess, zexcess0, zexcess, zdispot, zcaldiss
-      real(rk), parameter :: nyear_len    =  365._rk     !: number of days in a year - Jorn: TODO this should depend on calendar, leap year
       real(rk), parameter :: raamo    =  12._rk          !: number of months in one year
       real(rk), parameter :: rmtss = nyear_len * rday / raamo
 

@@ -13,7 +13,7 @@ module pisces_silica_dissolution
    type, extends(type_base_model) :: type_pisces_silica_dissolution
       type (type_state_variable_id)      :: id_gsi, id_sil
       type (type_diagnostic_variable_id) :: id_remin
-      type (type_dependency_id)          :: id_zsiremin
+      type (type_dependency_id)          :: id_zsiremin   ! dissoluton rate computed by type_dissolution_rate module below
    contains
       procedure :: initialize
       procedure :: do
@@ -36,7 +36,6 @@ contains
       integer,                                intent(in)            :: configunit
 
       class (type_dissolution_rate), pointer :: dissolution_rate
-      character(len=64) :: name
 
       allocate(dissolution_rate)
       call self%get_parameter(dissolution_rate%xsirem, 'xsirem', 'd-1', 'remineralization rate of Si', default=0.003_rk)
@@ -74,8 +73,6 @@ contains
    subroutine dissolution_rate_initialize(self, configunit)
       class (type_dissolution_rate), intent(inout), target :: self
       integer,                       intent(in)            :: configunit
-
-      character(len=64) :: name
 
       call self%register_diagnostic_variable(self%id_zsiremin, 'zsiremin', 's-1', 'specific rate', source=source_do_column)
 

@@ -132,8 +132,8 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
       real(rk) :: tempis, salinprac, rhop, dic, tal, po4, sil
-      real(rk) :: ztkel, zt, zsal, zcek1
-      real(rk) :: zplat, zc1, zpres, zsqrt, zsal15, zlogt, ztr, zis, zis2, zisqrt, ztc
+      real(rk) :: ztkel, zsal
+      real(rk) :: zpres, zsqrt, zsal15, zlogt, ztr, zis, zis2, zisqrt, ztc
       real(rk) :: zcl, zst, zft, zcks, zckf, zckb
       real(rk) :: zck1, zck2, zckw, zck1p, zck2p, zck3p, zcksi, zaksp0
       real(rk) :: total2free, free2SWS, total2SWS, SWS2total

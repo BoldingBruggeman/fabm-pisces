@@ -260,7 +260,7 @@ contains
 
       real(rk) :: c, ch, fe, si
       real(rk) :: nh4, no3, po4, biron, sil
-      real(rk) :: tem, gdept_n, zstrn, hmld, heup_01, etot_ndcy, etot_w, etot_wm, silm, gphit, fr_i
+      real(rk) :: tem, gdept_n, zstrn, hmld, heup_01, etot_ndcy, etot_w, etot_wm, gphit, fr_i
       real(rk) :: tgfunc, zconc, zconc2, z1_trb, concfe, zconcno3, zconcnh4, zdenom, xno3, xnh4, xpo4, zlim1, zlim2, xlim, xlimsi
       real(rk) :: xksi, zlim3
       real(rk) :: zratio, zironmin, zlim4, xlimfe
