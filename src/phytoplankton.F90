@@ -382,9 +382,9 @@ contains
             zprch = zprmax * ( 1._rk - EXP( -zpislope * etot_wm ) )       ! Units 1/s, note this uses mean PAR experienced in the euphotic layer (or 0 if below ML) - units are 1/d
          ENDIF
 
-         !  Computation of a proxy of the N/C ratio - Jorn: this seems to be relative to rno3 (not the absolute N:C!)
+         !  Computation of a proxy of the N/C ratio - Jorn: this is dimensionless and thus relative to rno3 (it is not the absolute N:C!)
          !  ---------------------------------------
-         zval = MIN( xpo4, ( xnh4 + xno3 ) )   &    ! Jorn: maximum growth rate at replete light, silicate [only nitrogen and phosphate limitation taken into account]
+         zval = MIN( xpo4, ( xnh4 + xno3 ) )   &    ! Jorn: nitrogen and phosphate limitation, divided by light limitation
          &      * zprmax / ( zpr + rtrn )
          quota = MIN( 1., 0.2_rk + 0.8_rk * zval )
          _SET_DIAGNOSTIC_(self%id_quota, quota)
