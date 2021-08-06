@@ -46,7 +46,7 @@ instances:
     model: pisces/tracer
     parameters:
       type: gom
-      ws: 2
+      ws: 50
     coupling:
       sed: sed
   phy:
@@ -75,12 +75,8 @@ instances:
       pe3: optics/pe3
       etot_ndcy: optics/etot_ndcy
       zstrn: daylength/zstrn
-      poc: pom/c
-      sfe: pom/fe
-      goc: gom/c
-      bfe: gom/fe
-      gsi: gom/si
-      cal: gom/cal
+      pom: pom
+      gom: gom
     initialization:
       c: 9.57e-8
       ch: 1.67e-7
@@ -112,11 +108,8 @@ instances:
       pe3: optics/pe3
       etot_ndcy: optics/etot_ndcy
       zstrn: daylength/zstrn
-      poc: pom/c
-      sfe: pom/fe
-      goc: gom/c
-      bfe: gom/fe
-      gsi: gom/si
+      pom: pom
+      gom: gom
     initialization:
       c: 4.24e-7
       ch: 1.02e-7
@@ -168,8 +161,7 @@ instances:
       fer: fer/fe
       oxy: oxy/O2       
       doc: dom/c
-      poc_waste: pom/c
-      pof_waste: pom/fe
+      waste: pom
       pos_waste: gom/si
   mes:
     long_name: mesozooplankton
@@ -203,9 +195,7 @@ instances:
       fer: fer/fe
       oxy: oxy/O2       
       doc: dom/c
-      poc_waste: gom/c
-      pof_waste: gom/fe
-      pos_waste: gom/si
+      waste: gom
   iron_availability:
     model: pisces/iron
     coupling:

@@ -3,6 +3,7 @@
 module pisces_phytoplankton
 
    use fabm_types
+   use fabm_particle
    use fabm_expressions
    use pisces_shared
 
@@ -10,10 +11,10 @@ module pisces_phytoplankton
 
    private
 
-   type, extends(type_base_model), public :: type_pisces_phytoplankton
+   type, extends(type_particle_model), public :: type_pisces_phytoplankton
       type (type_state_variable_id)     :: id_c, id_ch, id_fe, id_si
       type (type_state_variable_id)     :: id_no3, id_nh4, id_po4, id_sil, id_biron, id_doc, id_dic, id_tal, id_oxy
-      type (type_state_variable_id)     :: id_poc, id_sfe, id_goc, id_gsi, id_bfe, id_cal
+      type (type_state_variable_id)     :: id_poc, id_sfe, id_goc, id_gsi, id_bfe, id_cal, id_prodpoc, id_prodgoc
       type (type_dependency_id)         :: id_tem, id_gdept_n, id_xdiss
       type (type_dependency_id)         :: id_pe1, id_pe2, id_pe3, id_etot_ndcy, id_etot_w
       type (type_surface_dependency_id) :: id_zstrn, id_hmld, id_heup_01, id_etot_wm
@@ -147,11 +148,26 @@ contains
 
       call self%register_state_dependency(self%id_poc, 'poc', 'mol C L-1', 'small particulate organic carbon')
       call self%register_state_dependency(self%id_sfe, 'sfe', 'mol Fe L-1', 'small particulate organic iron')
+      call self%register_state_dependency(self%id_prodpoc, 'prodpoc', 'mol C L-1', 'produced small particulate organic carbon')
+
       call self%register_state_dependency(self%id_goc, 'goc', 'mol C L-1', 'large particulate organic carbon')
       call self%register_state_dependency(self%id_gsi, 'gsi', 'mol Si L-1', 'large particulate organic silicate')
       call self%register_state_dependency(self%id_bfe, 'bfe', 'mol Fe L-1', 'large particulate organic iron')
+      call self%register_state_dependency(self%id_prodgoc, 'prodgoc', 'mol C L-1', 'produced large particulate organic carbon')
       call self%register_state_dependency(self%id_cal, 'cal', 'mol C L-1', 'calcite')
-      if (.not. self%calcify) call self%request_coupling(self%id_cal, 'zero')
+
+      call self%request_coupling_to_model(self%id_poc, 'pom', 'c')
+      call self%request_coupling_to_model(self%id_sfe, 'pom', 'fe')
+      call self%request_coupling_to_model(self%id_prodpoc, 'pom', 'prod')
+      call self%request_coupling_to_model(self%id_goc, 'gom', 'c')
+      call self%request_coupling_to_model(self%id_bfe, 'gom', 'fe')
+      call self%request_coupling_to_model(self%id_gsi, 'gom', 'si')
+      call self%request_coupling_to_model(self%id_prodgoc, 'gom', 'prod')
+      if (self%calcify) then
+         call self%request_coupling_to_model(self%id_cal, 'gom', 'cal')
+      else
+         call self%request_coupling(self%id_cal, 'zero')
+      end if
 
       call self%register_dependency(self%id_tem, standard_variables%temperature)
       call self%register_dependency(self%id_zstrn, 'zstrn', 'h', 'day length')
@@ -408,7 +424,7 @@ contains
 
             !  Mixed-layer effect on production 
             !  Sea-ice effect on production
-            zpr = zpr * ( 1._rk - fr_i )
+            zpr = zpr * ( 1._rk - fr_i )   ! Jorn: production was computed using PAR in ice-free water; here that is converted into production over the entire cell (ice-free + ice-covered fractions)
 
             ! Computation of the various production terms 
             zprorca = zpr  * xlim* c                           ! total production (mol C/L/s), dropped multiplication with rfact2 [time step in seconds]
@@ -578,8 +594,8 @@ contains
 
          _ADD_SOURCE_(self%id_poc, + ( 1._rk - xfraresp ) * zrespp + ( 1._rk - xfratort ) * ztortp)
          _ADD_SOURCE_(self%id_goc, + xfraresp * zrespp + xfratort * ztortp)
-         !prodpoc(ji,jj,jk) = prodpoc(ji,jj,jk) + ( 1. - zfracal ) * zmortp
-         !prodgoc(ji,jj,jk) = prodgoc(ji,jj,jk) + zfracal * zmortp
+         _ADD_SOURCE_(self%id_prodpoc, + ( 1._rk - xfraresp ) * zrespp + ( 1._rk - xfratort ) * ztortp)
+         _ADD_SOURCE_(self%id_prodgoc, + xfraresp * zrespp + xfratort * ztortp)
          _ADD_SOURCE_(self%id_sfe, + (( 1._rk - xfraresp ) * zrespp + ( 1._rk - xfratort ) * ztortp) * zfactfe)
          _ADD_SOURCE_(self%id_bfe, + (xfraresp * zrespp + xfratort * ztortp) * zfactfe)
 

@@ -15,6 +15,7 @@ module pisces_zooplankton
       type (type_state_variable_id) :: id_don, id_dop, id_oxy, id_fer
       type (type_state_variable_id) :: id_dia, id_dfe, id_dsi, id_dch, id_phy, id_nfe, id_nch, id_zoo, id_poc, id_sfe, id_goc, id_bfe, id_gsi
       type (type_state_variable_id) :: id_po4, id_no3, id_nh4, id_doc, id_dic, id_tal, id_poc_waste, id_pof_waste, id_pos_waste, id_cal
+      type (type_state_variable_id) :: id_conspoc, id_consgoc, id_prodpoc, id_poc_waste_prod
       type (type_dependency_id)     :: id_tem, id_nitrfac, id_quotan, id_quotad, id_xfracal, id_wspoc, id_wsgoc
       type (type_diagnostic_variable_id) :: id_zfezoo, id_zgrazing, id_zfrac, id_pcal
 
@@ -81,6 +82,11 @@ contains
       call self%register_state_dependency(self%id_pof_waste, 'pof_waste', 'mol Fe L-1', 'particulate iron waste')
       call self%register_state_dependency(self%id_pos_waste, 'pos_waste', 'mol Si L-1', 'particulate silicon waste')
       call self%register_state_dependency(self%id_cal, 'cal', 'mol C L-1', 'calcite')
+      call self%register_state_dependency(self%id_poc_waste_prod, 'poc_waste_prod', 'mol C L-1', 'produced particulate carbon waste')
+      call self%request_coupling_to_model(self%id_poc_waste, 'waste', 'c')
+      call self%request_coupling_to_model(self%id_pof_waste, 'waste', 'fe')
+      call self%request_coupling_to_model(self%id_pos_waste, 'waste', 'si')
+      call self%request_coupling_to_model(self%id_poc_waste_prod, 'waste', 'prod')
 
       ! Prey
       call self%register_state_dependency(self%id_dia, 'diac', 'mol C L-1', 'diatoms')
@@ -96,6 +102,9 @@ contains
       call self%register_state_dependency(self%id_goc, 'goc', 'mol C L-1', 'large particulate organic carbon')
       call self%register_state_dependency(self%id_gsi, 'gsi', 'mol Si L-1', 'large particulate organic silicon')
       call self%register_state_dependency(self%id_bfe, 'bfe', 'mol Fe L-1', 'large particulate organic iron')
+      call self%register_state_dependency(self%id_prodpoc, 'prodpoc', 'mol C L-1', 'produced small particulate organic carbon')
+      call self%register_state_dependency(self%id_conspoc, 'conspoc', 'mol C L-1', 'consumed small particulate organic carbon')
+      call self%register_state_dependency(self%id_consgoc, 'consgoc', 'mol C L-1', 'consumed large particulate organic carbon')
       call self%register_dependency(self%id_quotan, 'quotan', '-', 'proxy for N quota of nanophytoplankton')
       call self%register_dependency(self%id_quotad, 'quotad', '-', 'proxy for N quota of diatoms')
       call self%register_dependency(self%id_xfracal, 'xfracal', '1', 'calcifying fraction of nanophytoplankton')
@@ -116,11 +125,14 @@ contains
       call self%request_coupling_to_model(self%id_poc, 'pom', 'c')
       call self%request_coupling_to_model(self%id_sfe, 'pom', 'fe')
       call self%request_coupling_to_model(self%id_wspoc, 'pom', 'ws')
+      call self%request_coupling_to_model(self%id_prodpoc, 'pom', 'prod')
+      call self%request_coupling_to_model(self%id_conspoc, 'pom', 'cons')
       call self%request_coupling_to_model(self%id_goc, 'gom', 'c')
       call self%request_coupling_to_model(self%id_bfe, 'gom', 'fe')
       call self%request_coupling_to_model(self%id_gsi, 'gom', 'si')
       call self%request_coupling_to_model(self%id_cal, 'gom', 'cal')
       call self%request_coupling_to_model(self%id_wsgoc, 'gom', 'ws')
+      call self%request_coupling_to_model(self%id_consgoc, 'gom', 'cons')
 
       call self%register_dependency(self%id_tem, standard_variables%temperature)
       call self%register_dependency(self%id_nitrfac, 'nitrfac', '1', 'denitrification factor computed from O2 levels')
@@ -310,13 +322,14 @@ contains
          _ADD_SOURCE_(self%id_sfe, - zgrazpof - zgrazfffp)
          _ADD_SOURCE_(self%id_goc,            - zgrazffeg)
          _ADD_SOURCE_(self%id_bfe,            - zgrazfffg)
-         !prodpoc(ji,jj,jk) = prodpoc(ji,jj,jk) + zmortz
-         !conspoc(ji,jj,jk) = conspoc(ji,jj,jk) - zgrazm
+         _ADD_SOURCE_(self%id_conspoc, - zgrazpoc - zgrazffep)
+         _ADD_SOURCE_(self%id_consgoc,            - zgrazffeg)
 
          ! Particulate waste from feeding and mortality
          _ADD_SOURCE_(self%id_poc_waste, + zgraztotc * self%unass + zmortzgoc)
          _ADD_SOURCE_(self%id_pos_waste, + zgrazd * dsi / (dia + rtrn))
          _ADD_SOURCE_(self%id_pof_waste, + zgraztotf * self%unass + self%ferat * zmortzgoc)
+         _ADD_SOURCE_(self%id_poc_waste_prod, + zgraztotc * self%unass + zmortzgoc)
 
          ! Fractionation (break-up of large POM into small POM)
          _ADD_SOURCE_(self%id_poc, + zfrac)
@@ -324,6 +337,8 @@ contains
          _ADD_SOURCE_(self%id_goc, - zfrac)
          _ADD_SOURCE_(self%id_bfe, - zfracfe)
          _SET_DIAGNOSTIC_(self%id_zfrac, + zfrac * 1e3_rk)
+         _ADD_SOURCE_(self%id_prodpoc, + zfrac)
+         _ADD_SOURCE_(self%id_consgoc, - zfrac)
          !
          ! Jorn: calcite is consumed as part of flux feeding (uptake proportional to cal/poc * poc_uptake).
          ! The fraction that dissolves in the gut (1-part) is removed from the ambient calcite pool

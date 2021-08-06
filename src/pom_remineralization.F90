@@ -18,7 +18,7 @@ module pisces_pom_remineralization
       procedure :: do         => pom_remineralization_do
    end type
 
-   type, extends(type_base_model) :: type_pisces_lability
+   type, extends(type_particle_model) :: type_pisces_lability
       type (type_surface_dependency_id) :: id_hmld
       type (type_dependency_id) :: id_tem, id_gdept_n, id_e3t_n, id_ws, id_cons, id_prod, id_poc
       type (type_diagnostic_variable_id) :: id_zremi
@@ -56,6 +56,7 @@ contains
       call self%add_child(lability, 'lability')
       call lability%request_coupling(lability%id_poc, '../c')
       call lability%request_coupling(lability%id_ws, '../ws')
+      call lability%couplings%set_string('pom', '../pom')
 
       call self%register_state_dependency(self%id_c, 'c', 'mol C L-1', 'particulate organic carbon')
       call self%register_state_dependency(self%id_fe, 'fe', 'mol C L-1', 'particulate organic carbon')
@@ -118,8 +119,9 @@ contains
       call self%register_dependency(self%id_poc, 'poc', 'mol C L-1', 'particulate organic carbon')
       call self%register_dependency(self%id_prod, 'prod', 'mol C L-1 s-1', 'particulate organic carbon sources')
       call self%register_dependency(self%id_cons, 'cons', 'mol C L-1 s-1', 'particulate organic carbon sinks')
-      call self%request_coupling(self%id_prod, 'zero')
-      call self%request_coupling(self%id_cons, 'zero')
+      call self%request_coupling_to_model(self%id_poc, 'pom', 'c')
+      call self%request_coupling_to_model(self%id_prod, 'pom', 'prod_sms_tot')
+      call self%request_coupling_to_model(self%id_cons, 'pom', 'cons_sms_tot')
 
       ALLOCATE( self%alphan(self%jcpoc) , self%reminp(self%jcpoc) )
       !

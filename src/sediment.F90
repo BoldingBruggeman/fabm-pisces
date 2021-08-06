@@ -17,7 +17,6 @@ module pisces_sediment
       real(rk) :: sedsilfrac = 0.03_rk
       real(rk) :: sedcalfrac = 0.6_rk
       real(rk) :: sedfeinput
-      real(rk) :: maxdt = 1800._rk ! Jorn: maximum time step in seconds, used to limit benthic-pelagic fluxes in order to prevent negative values
    contains
       procedure :: initialize
       procedure :: do_bottom
@@ -129,9 +128,9 @@ contains
 
          zrivno3 = 1. - zbureff
          zwstpoc = cflux * 1E-6_rk
-         zpdenit  = MIN( 0.5 * ( no3 - rtrn ) / rdenit / self%maxdt, zdenit2d * zwstpoc * zrivno3 )   ! Jorn: Eq 90a, added maxdt because the entire expression is now a rate rather than an increment
+         zpdenit  = MIN( 0.5 * ( no3 - rtrn ) / rdenit / maxdt, zdenit2d * zwstpoc * zrivno3 )   ! Jorn: Eq 90a, added maxdt because the entire expression is now a rate rather than an increment
          z1pdenit = zwstpoc * zrivno3 - zpdenit   ! Jorn: Eq 90b except for the o2ut scale factor
-         zolimit = MIN( ( oxy - rtrn ) / o2ut / self%maxdt, z1pdenit * ( 1.- nitrfac ) )   ! Jorn: added maxdt because the entire expression is now a rate rather than an increment
+         zolimit = MIN( ( oxy - rtrn ) / o2ut / maxdt, z1pdenit * ( 1.- nitrfac ) )   ! Jorn: added maxdt because the entire expression is now a rate rather than an increment
          _ADD_BOTTOM_FLUX_(self%id_doc, + z1pdenit - zolimit)   ! the part of the downward POM flux that is not used in oxic degradation or denitrification is returned to the water column as DOM
          _ADD_BOTTOM_FLUX_(self%id_po4, + zpdenit + zolimit)    ! phosphate released by oxic degradation and denitrification
          _ADD_BOTTOM_FLUX_(self%id_nh4, + zpdenit + zolimit)    ! ammonium released by oxic degradation and denitrification
