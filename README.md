@@ -12,7 +12,7 @@ handle a runtime-configurable number of prey types.
 
 This code must be compiled together with FABM. To do this, provide the following additional arguments to cmake [when you build FABM](https://github.com/fabm-model/fabm/wiki/Building-and-installing): `-DFABM_INSTITUTES=pisces -DFABM_PISCES_BASE=<PISCESDIR>`
 
-Here, `<PISCESDIR>` is the directory that with the FABM-PISCES code (the same directory that contains this readme file). Note that `-DFABM_INSTITUTES=pisces` will make FABM compile PISCES as the *only* available biogeochemical model. If you additionally want to have access to other biogeochemical models included with FABM, you can set `FABM_INSTITUTES` to a semi-colon separated list, e.g., `-DFABM_INSTITUTES="pisces;ersem"` (to prevent the shell from interpreting the semi-colons, you typically have to enclose this list with quotes).
+Here, `<PISCESDIR>` is the directory with the FABM-PISCES code (the same directory that contains this readme file). Note that `-DFABM_INSTITUTES=pisces` will make FABM compile PISCES as the *only* available biogeochemical model. If you additionally want to have access to other biogeochemical models included with FABM, you can set `FABM_INSTITUTES` to a semi-colon separated list, e.g., `-DFABM_INSTITUTES="pisces;ersem"` (to prevent the shell from interpreting the semi-colons, you typically have to enclose this list with quotes).
 
 For instance, to use PISCES with the latest stable release of the [General Ocean Turbulence Model (GOTM)](https://gotm.net/), do the following:
 
@@ -45,7 +45,7 @@ A `fabm.yaml` file with the PISCES configuration is provided under `<PISCESDIR>/
 
 ## Differences from the published PISCES description
 
-The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10.5194/gmd-8-2465-2015) where possible. However, the PISCES version it is based on (NEMO r4.0-HEAD.r13720) has already evolved beyond the description in the paper. Thus, there are several differences between the code and the paper. We will attempt to track these here:
+The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10.5194/gmd-8-2465-2015) where possible. However, the PISCES version that the code is based on (NEMO r4.0-HEAD.r13720) has already evolved beyond the description in the paper. Thus, there are several differences between the code and the paper. We will attempt to track these here:
 
 * phytoplankton maximum growth rate [its reference value at 0 degrees Celsius] is 0.6 d-1 in paper, 0.8 d-1 in code.
 * particulate organic mater (POC, GOC) remineralisation is now depth-dependent and calculated using a configurable number of lability classes (`p4zpoc.F90`). This has replaced Eq 38.
@@ -59,7 +59,7 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 * The time spent below the euphotic zone is now incorporated in a reduced effective day length. This makes Eqs 3b-3d (and any use of f2, as e.g. for chlorophyll synthesis) in paper redundant. Also, only one term (the equivalent of f1(L_day)) is now used in the photosynthesis equation, while in the paper f1(L_day) is used for maximum photosynthesis, but L_day within the light limitation term.
 * maximum chl : C ratio is now temperature dependent
 * chlorophyll synthesis (Eq 15b) now lacks division by nutrient limitation in light limitation term. This is similar to the difference between Eq 2a and 2b (has chlorophyll been "upgraded" to become like Eq 2a?)
-* the upper limit of 5.4 in equation 22 for silicate uptake seem to have been removed
+* the upper limit of 5.4 in equation 22 for silicate uptake seems to have been removed
 * latitude dependence of silicate limitation differs (paper: threshold at equator, above limiter is 1; code: threshold at 30 degrees South, above limiter is 1 + Si3/(Si3+c))
 * zooplankton: a threshold concentration of 1e-9 mol C/L is protected from mortality (linear and quadratic)
 * quadratic zooplankton mortality and grazing are now depressed when oxygen becomes limiting
@@ -84,7 +84,7 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 
 In many cases, answers to these questions would help decide how to implement particular functionality in the FABM port of PISCES.
 In some cases, the questions could potentially point to minor issues in the PISCES code. It is more likely, however, that they reflect
-our lack of understandng of what that original code does.
+our lack of understanding of what that original code does.
 
 *  What is the unit of `zpres` in `p4zche.F90`?  L248 seems to convert from dbar to bar, but comments on L345-354 suggest dbar is needed.
 * in `p4zsed.F90`, calcite dissolution in sediment depends on the calcite saturation state of the overlying water (Eq 91 in paper): 
