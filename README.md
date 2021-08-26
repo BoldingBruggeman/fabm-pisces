@@ -82,6 +82,10 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 
 ## Questions to PISCES authors
 
+In many cases, answers to these questions would help decide how to implement particular functionality in the FABM port of PISCES.
+In some cases, the questions could potentially point to minor issues in the PISCES code. It is more likely, however, that they reflect
+our lack of understandng of what that original code does.
+
 *  What is the unit of `zpres` in `p4zche.F90`?  L248 seems to convert from dbar to bar, but comments on L345-354 suggest dbar is needed. (question posed to Olivier Aumont 19 July 2021)
 * in `p4zsed.F90`, calcite dissolution in sediment depends on the calcite saturation state of the overlying water (Eq 91 in paper): 
 ```
@@ -100,7 +104,8 @@ Does `zfactcal` represent the preserved fraction, as hinted at by the paper and 
                   tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) + 0.002 * 4E-10 * zsoufer(ji,jj,jk) * rfact2 / rday
 ```
 * Bacterial uptake of iron in `p4zrem.F90` uses a hardcoded maximum phytoplankton growth rate of 0.6 d-1 (at 0 degrees Celsius). That matches the paper, but not the latest PISCES code, in which this constant has been replaced by 0.8 d-1. Should the bacterial uptake constant not be replaced too?
-* why the different treatment of POC and GOC disaggregation in the mixed layer (`p4zpoc.F90`)? Is that because the sinking rate of POC is constant, whereas the sinking of GOC is (potentially) depth-dependent?
-* dust dissolution (`p4zsed.F90`) has two parts: instantaneous dissolution upon deposition at the surface, and (slower) dissolution throughout the column. But why does the latter not apply to the (center of) the top layer? (the responsible loop starts at `jk=2`)
+* why the different treatment of POC and GOC remineralisation (constant for GOC, but dynamically calculated for POC) in the mixed layer (`p4zpoc.F90`)? 
+* about pom remineralisation (`p4zpoc.F90`): why is the POC production due to GOC disaggregation proportional to `zorem3(ji,jj,jk) * alphag(ji,jj,jk,jn)` instead of `reminp(jn) * alphag(ji,jj,jk,jn)`? (in other words: why does it depend on the *mean* remineraliation rate instead of on the lability-class-specific rate?). And why is this GOC->POC conversion not taken into acccount within the mixed layer as additional POC production term? Why is the specific consumption rate in the mixed layer computed by first calculating the specific rate and then depth-integrating it, instead of computing the integral of consumption and dividing that by the integral of POC concentration?
+* dust dissolution (`p4zsed.F90`) has two parts: instantaneous dissolution upon deposition at the surface, and (slower) dissolution throughout the column. But why does the latter not apply to the (center of) the top layer? (the responsible loop starts at `jk=2`) That introduces a grid scale dependence of the model solution (it depends on the thickness of the top layer)
 * Assuming `dust` is in g m-2 s-1 and `wdust` in m d-1, shouldn't `wdust` be divided by `rday` instead of multiplied by it in `CALL iom_put( "pdust"  , dust(:,:) / ( wdust * rday )  * tmask(:,:,1) ) ` (in `p4zsed.F90`)
 * quadratic mortality losses of mesozooplankton are ascribed to higher trophic levels. Accordingly a fraction of this loss is respired, a fraction ends up in fecal pellets. The remainder supposedly inside those HTLs - but since they are not tracked by PISCES, that is a non-conservative loss terms. What's the idea behind this? (where does that mass ultimately go? harvested?)
