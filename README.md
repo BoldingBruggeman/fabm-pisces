@@ -86,7 +86,7 @@ In many cases, answers to these questions would help decide how to implement par
 In some cases, the questions could potentially point to minor issues in the PISCES code. It is more likely, however, that they reflect
 our lack of understandng of what that original code does.
 
-*  What is the unit of `zpres` in `p4zche.F90`?  L248 seems to convert from dbar to bar, but comments on L345-354 suggest dbar is needed. (question posed to Olivier Aumont 19 July 2021)
+*  What is the unit of `zpres` in `p4zche.F90`?  L248 seems to convert from dbar to bar, but comments on L345-354 suggest dbar is needed.
 * in `p4zsed.F90`, calcite dissolution in sediment depends on the calcite saturation state of the overlying water (Eq 91 in paper): 
 ```
                zfactcal = MIN( excess(ji,jj,ikt), 0.2 )
