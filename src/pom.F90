@@ -1,5 +1,14 @@
 #include "fabm_driver.h"
 
+! This module describes a particulate organic matter tracer.
+! * It always contains carbon, nitrogen and phosphorus (in fixed stochiometric ratio), as well as iron.
+!   It can optionally contain silica and calcite.
+! * The tracer has a configurable sinking velocity.
+!   At the bed, the sinking biomass is moved into an (externally described) pool of organic matter within the sediment.
+! * The tracer is subject to remineralization, which is controlled by a time-and space-dependent remineralization rate,
+!   calculated using a number of lability classes.
+!   If the tracer contains silica and/or calcite, their dissolution is described separately.
+
 module pisces_pom
    use fabm_types
    use fabm_particle
@@ -17,6 +26,11 @@ module pisces_pom
       type (type_bottom_state_variable_id) :: id_bc, id_bfe, id_bsi, id_bcal
       type (type_diagnostic_variable_id) :: id_ws, id_prod, id_cons
       type (type_dependency_id)     :: id_zremi, id_e3t_n
+
+      type (type_diagnostic_variable_id), allocatable :: id_prodn(:)
+      type (type_dependency_id),          allocatable :: id_alpha(:)
+      type (type_state_variable_id),      allocatable :: id_sprodn(:)
+
       real(rk) :: solgoc
       real(rk) :: ws, wsmax, wsscale
    contains
@@ -30,6 +44,7 @@ module pisces_pom
       type (type_dependency_id) :: id_tem, id_gdept_n, id_e3t_n, id_ws, id_cons, id_prod, id_poc
       type (type_diagnostic_variable_id) :: id_zremi
       type (type_diagnostic_variable_id), allocatable :: id_alpha(:)
+      type (type_dependency_id),          allocatable :: id_prodn(:)
       logical :: mlvar
       integer :: jcpoc
       real(rk) :: xremip, rshape
@@ -49,8 +64,10 @@ contains
       class (type_pisces_calcite_dissolution), pointer :: calcite_dissolution
       class (type_pisces_silica_dissolution),  pointer :: silica_dissolution
       class (type_pisces_lability),            pointer :: lability
+      integer                                          :: jn
+      character(len=4)                                 :: strindex
 
-      call self%get_parameter(has_silicon, 'has_silicon', '', 'particulate tracer contains silica', default=.false.)
+      call self%get_parameter(has_silicon, 'has_silicon', '', 'particulate tracer contains silica',  default=.false.)
       call self%get_parameter(has_calcite, 'has_calcite', '', 'particulate tracer contains calcite', default=.false.)
 
       call self%get_parameter(self%ws, 'ws', 'm d-1', 'minimum sinking velocity', default=50._rk)
@@ -87,11 +104,6 @@ contains
          call silica_dissolution%request_coupling('rate/heup_01', '../../optics/heup_01')  ! Jorn: hack, TODO fix!!
       end if
 
-      call self%register_diagnostic_variable(self%id_prod, 'prod', 'mol C L-1', 'produced particulate organic carbon', &
-         act_as_state_variable=.true., source=source_constant, output=output_none)
-      call self%register_diagnostic_variable(self%id_cons, 'cons', 'mol C L-1', 'consumed particulate organic carbon', &
-         act_as_state_variable=.true., source=source_constant, output=output_none)
-
       ! Couple to benthic pools to deposit sinking material in.
       ! Note that these already have FABM default units so that ultimately we can couple to other benthic models too.
       call self%register_state_dependency(self%id_bc, 'bc', 'mmol C m-2', 'target pool for organic carbon depositon')
@@ -126,26 +138,46 @@ contains
 
       call self%register_state_dependency(self%id_doc, 'doc', 'mol C L-1', 'dissolved organic carbon')
       call self%register_state_dependency(self%id_fer, 'fer', 'mol C L-1', 'iron')
-      call self%register_state_dependency(self%id_poc, 'poc', 'mol C L-1', 'small particulate organic carbon')
-      call self%register_state_dependency(self%id_sfe, 'sfe', 'mol C L-1', 'small particulate organic iron')
-      call self%register_dependency(self%id_zremi, 'zremi', 's-1', 'remineralization rate')
-
       call self%request_coupling_to_model(self%id_doc, 'dom', 'c')
-      if (self%solgoc == 0._rk) then
-         call self%request_coupling(self%id_poc, 'zero')
-         call self%request_coupling(self%id_sfe, 'zero')
-      else
+
+      if (self%solgoc /= 0._rk) then
+         call self%register_state_dependency(self%id_poc, 'poc', 'mol C L-1', 'small particulate organic carbon')
+         call self%register_state_dependency(self%id_sfe, 'sfe', 'mol C L-1', 'small particulate organic iron')
          call self%request_coupling_to_model(self%id_poc, 'spom', 'c')
          call self%request_coupling_to_model(self%id_sfe, 'spom', 'fe')
       end if
+
+      call self%register_dependency(self%id_zremi, 'zremi', 's-1', 'remineralization rate')
       call self%request_coupling(self%id_zremi, 'lability/zremi')
+
+      call self%register_diagnostic_variable(self%id_prod, 'prod', 'mol C L-1', 'produced particulate organic carbon', &
+         act_as_state_variable=.true., source=source_constant, output=output_none)
+      call self%register_diagnostic_variable(self%id_cons, 'cons', 'mol C L-1', 'consumed particulate organic carbon', &
+         act_as_state_variable=.true., source=source_constant, output=output_none)
+
+      allocate(self%id_prodn(lability%jcpoc), self%id_alpha(lability%jcpoc), self%id_sprodn(lability%jcpoc))
+      do jn = 1, lability%jcpoc
+         write (strindex, '(i0)') jn
+         call self%register_diagnostic_variable(self%id_prodn(jn), 'prod' // trim(strindex), 'mol C L-1', 'produced particulate organic carbon in lability class ' // trim(strindex), &
+            act_as_state_variable=.true., source=source_constant, output=output_none)
+         call lability%request_coupling(lability%id_prodn(jn), '../prod' // trim(strindex) // '_sms_tot')
+
+         if (self%solgoc /= 0._rk) then
+            call self%register_dependency(self%id_alpha(jn), 'alpha' // trim(strindex), '1', 'fraction in lability class ' // trim(strindex))
+            call self%request_coupling(self%id_alpha(jn), 'lability/alpha' // trim(strindex))
+
+            call self%register_state_dependency(self%id_sprodn(jn), 'sprod' // trim(strindex), 'mol C L-1', 'produced small particulate organic carbon in lability class ' // trim(strindex))
+            call self%request_coupling_to_model(self%id_sprodn(jn), 'spom', 'prod' // trim(strindex))
+         end if
+      end do
    end subroutine
 
    subroutine do(self, _ARGUMENTS_DO_)
       class (type_pisces_pom), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_
 
-      real(rk) :: c, fe, zremi, zorem, zofer
+      real(rk) :: c, fe, zremi, zorem, zofer, alpha
+      integer  :: jn
 
       _LOOP_BEGIN_
          _GET_(self%id_c, c)
@@ -157,8 +189,14 @@ contains
          _ADD_SOURCE_(self%id_fe,  - (1._rk + self%solgoc) * zofer)
          _ADD_SOURCE_(self%id_doc, + zorem)
          _ADD_SOURCE_(self%id_fer, + zofer)
-         _ADD_SOURCE_(self%id_poc, + self%solgoc * zorem)
-         _ADD_SOURCE_(self%id_sfe, + self%solgoc * zofer)
+         if (self%solgoc /= 0._rk) then
+            _ADD_SOURCE_(self%id_poc, + self%solgoc * zorem)
+            _ADD_SOURCE_(self%id_sfe, + self%solgoc * zofer)
+            do jn = 1, size(self%id_alpha)
+               _GET_(self%id_alpha(jn), alpha)
+               _ADD_SOURCE_(self%id_sprodn(jn), + self%solgoc * alpha * zorem)
+            end do
+         end if
       _LOOP_END_
    end subroutine
 
@@ -240,10 +278,11 @@ contains
          self%reminp(self%jcpoc) = self%xremip
       ENDIF
 
-      ALLOCATE( self%id_alpha(self%jcpoc))
+      ALLOCATE( self%id_alpha(self%jcpoc), self%id_prodn(self%jcpoc))
       do jn = 1, self%jcpoc
          write (strindex, '(i0)') jn
          call self%register_diagnostic_variable(self%id_alpha(jn), 'alpha' // trim(strindex), '1', 'fraction in class '  // trim(strindex), source=source_do_column)
+         call self%register_dependency(self%id_prodn(jn), 'prodn' // trim(strindex), '1', 'particulate organic carbon sources for class '  // trim(strindex))
       end do
    end subroutine
 
@@ -313,9 +352,14 @@ contains
          _GET_(self%id_cons, cons)
          _GET_(self%id_prod, prod)
 
+         ! Jorn: production per lability class
+         DO jn = 1, self%jcpoc
+            _GET_(self%id_prodn(jn), prodn(jn))
+            prodn(jn) = prodn(jn) + prod * self%alphan(jn)
+         END DO
+
          tgfunc = EXP( 0.063913_rk * tem )  ! Jorn: Eq 4a in PISCES-v2 paper, NB EXP(0.063913) = 1.066 = b_P
          zsizek = e3t_n / 2. / (ws + rtrn) * tgfunc
-         prodn = prod * self%alphan         ! Jorn: production per lability class
 
          !
          ! In the case of GOC, lability is constant in the mixed layer 
@@ -355,7 +399,7 @@ contains
                   ! degradation 
                   alpha(jn) = alpha1(jn) * exp( -self%reminp(jn) * zsizek ) * zpoc &
                   &   + prodn(jn) / tgfunc / self%reminp(jn)             &  ! Jorn: same for POC, except that GOC->POC conversion [zorem3*alphag] is added to prodgoc*alphan
-                  &   * ( 1. - exp( -self%reminp(jn) * zsizek ) ) * rday   ! Jorn: dropped division by rfact2 as prodgoc is already per second (unlike in pisces, where it is premultiplied by time step rfact2)
+                  &   * ( 1. - exp( -self%reminp(jn) * zsizek ) ) * rday   ! Jorn: dropped division by rfact2 as prodn is already per second (unlike in pisces, where it is premultiplied by time step rfact2)
                   alphat = alphat + alpha(jn)
                   remint = remint + alpha(jn) * self%reminp(jn)
                END DO
@@ -374,7 +418,7 @@ contains
                   alpha(jn) = alpha1(jn) * exp( -self%reminp(jn) * ( zsizek              &
                   &   + zsizek1 ) ) * zpoc + ( prodn1(jn) / tgfunc1 * ( 1.           &
                   &   - exp( -self%reminp(jn) * zsizek1 ) ) * exp( -self%reminp(jn) * zsizek ) + prodn(jn) &  ! Jorn: same for POC, except that GOC->POC conversion [zorem3*alphag] is added to prodgoc*alphan
-                  &   / tgfunc * ( 1. - exp( -self%reminp(jn) * zsizek ) ) ) * rday / self%reminp(jn)         ! Jorn: dropped division by rfact2 as prodgoc is already per second (unlike in pisces, where it is premultiplied by time step rfact2)
+                  &   / tgfunc * ( 1. - exp( -self%reminp(jn) * zsizek ) ) ) * rday / self%reminp(jn)         ! Jorn: dropped division by rfact2 as prodn is already per second (unlike in pisces, where it is premultiplied by time step rfact2)
                   alphat = alphat + alpha(jn)
                   remint = remint + alpha(jn) * self%reminp(jn)
                END DO

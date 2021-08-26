@@ -2,6 +2,12 @@
 
 This is a [FABM](https://fabm.net) port of [the PISCES model](https://doi.org/10.5194/gmd-8-2465-2015). It is based on the PISCES code that comes with the r4.0-HEAD.r13720 version of [NEMO](https://www.nemo-ocean.eu/).
 
+The code has been modularised to the point where it is straightforward to create configurations with any number
+of phytoplankton and zooplankton types and any number of particulate organic matter classes - all by adjusting
+the runtime configuration (`fabm.yaml`), no code change or recompilation needed. However, some more work would
+be needed to fully support such configurations. Specifically, the zooplankton code would need to be changed to
+handle a runtime-configurable number of prey types.
+
 ## How to build
 
 This code must be compiled together with FABM. To do this, provide the following additional arguments to cmake [when you build FABM](https://github.com/fabm-model/fabm/wiki/Building-and-installing): `-DFABM_INSTITUTES=pisces -DFABM_PISCES_BASE=<PISCESDIR>`
@@ -28,7 +34,6 @@ A `fabm.yaml` file with the PISCES configuration is provided under `<PISCESDIR>/
 
 ## To do
 
-* connect POC and GOC remineralization parameterization (`p4zpoc.F90`)
 * add source of iron due to sea ice melt (`p4zsed.F90`, `ln_ironice`)
 * add iron input from hydrothermal vents - implement in TOP-FABM or in PISCES code? (`p4zsed.F90`, `ln_hydrofe`)
 * enable iron input fom sediments throughout the column using coast and island mask (now restricted to bottom only)
