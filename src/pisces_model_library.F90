@@ -12,7 +12,7 @@ module pisces_model_library
    use pisces_turbocline
    use pisces_shear
    use pisces_dom_remineralization
-   use pisces_pom_remineralization
+   use pisces_pom
    use pisces_aggregation
    use pisces_iron
    use pisces_nitrification
@@ -49,7 +49,7 @@ contains
          case ('turbocline');          allocate(type_pisces_turbocline::model)
          case ('shear');               allocate(type_pisces_shear::model)
          case ('dom_remineralization');allocate(type_pisces_dom_remineralization::model)
-         case ('pom_remineralization');allocate(type_pisces_pom_remineralization::model)
+         case ('pom');                 allocate(type_pisces_pom::model)
          case ('aggregation');         allocate(type_pisces_aggregation::model)
          case ('nitrification');       allocate(type_pisces_nitrification::model)
          case ('nitrogen_fixation');   allocate(type_pisces_nitrogen_fixation::model)

@@ -11,7 +11,7 @@ add_library(fabm_models_pisces OBJECT
             oxygen.F90
             shared.F90
             dom_remineralization.F90
-            pom_remineralization.F90
+            pom.F90
             silica_dissolution.F90
             calcite_dissolution.F90
             aggregation.F90

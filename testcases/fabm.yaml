@@ -7,47 +7,76 @@ instances:
     long_name: nitrate
     model: pisces/tracer
     parameters:
-      type: nitrate
+      has_nitrogen: true
+    initialization:
+      c: 4.4148749999999996e-05
   nh4:
     long_name: ammonium
     model: pisces/tracer
     parameters:
-      type: ammonium
+      has_nitrogen: true
+    initialization:
+      c: 2.45525e-06
   po4:
     long_name: phosphate
     model: pisces/tracer
     parameters:
-      type: phosphate
+      has_phosphorus: true
+    initialization:
+      c: 7.0394e-05
   sil:
     long_name: silicate
     model: pisces/tracer
     parameters:
-      type: silicate
+      has_silicon: true
+    initialization:
+      si: 1.07e-7
   fer:
     long_name: iron
     model: pisces/tracer
     parameters:
-      type: iron
+      has_iron: true
+    initialization:
+      fe: 4.06e-10
   dom:
     long_name: dissolved organic matter
     model: pisces/tracer
     parameters:
-      type: dom
+      has_carbon: true
+      has_nitrogen: true
+      has_phosphorus: true
+    initialization:
+      c: 2.04e-5
   pom:
     long_name: small particulate organic matter
-    model: pisces/tracer
+    model: pisces/pom
     parameters:
-      type: pom
       ws: 2
+      solgoc: 0
+      mlvar: true
+    initialization:
+      c: 1.27e-6
+      fe: 2.51e-11
     coupling:
+      dom: dom
+      fer: fer/fe
       sed: sed
   gom:
     long_name: large particulate organic matter
-    model: pisces/tracer
+    model: pisces/pom
     parameters:
-      type: gom
+      has_silicon: true
+      has_calcite: true
       ws: 50
+    initialization:
+      c: 5.23e-8
+      fe: 9.84e-13
+      si: 1.53e-8
+      cal: 1.04e-8
     coupling:
+      dom: dom
+      fer: fer/fe
+      spom: pom
       sed: sed
   phy:
     long_name: nanophytoplankton
@@ -227,22 +256,6 @@ instances:
       pom: pom
       gom: gom
       etot_ndcy: optics/etot_ndcy
-  pom_rem:
-    model: pisces/pom_remineralization
-    parameters:
-      solgoc: 0
-      mlvar: true
-    coupling:
-      pom: pom
-      dom: dom
-      fer: fer/fe
-  gom_rem:
-    model: pisces/pom_remineralization
-    coupling:
-      pom: gom
-      dom: dom
-      fer: fer/fe
-      spom: pom
   dom_rem:
     model: pisces/dom_remineralization
     coupling:
