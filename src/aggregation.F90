@@ -10,7 +10,7 @@ module pisces_aggregation
    private
 
    type, extends(type_particle_model), public :: type_pisces_aggregation
-      type (type_state_variable_id) :: id_doc, id_poc, id_goc, id_sfe, id_bfe
+      type (type_state_variable_id) :: id_doc, id_poc, id_goc, id_sfe, id_bfe, id_conspoc, id_prodgoc
       type (type_dependency_id) :: id_xdiss
    contains
       procedure :: initialize
@@ -29,11 +29,16 @@ contains
       call self%register_state_dependency(self%id_sfe, 'sfe', 'mol Fe L-1', 'small particulate organic iron')
       call self%register_state_dependency(self%id_bfe, 'bfe', 'mol Fe L-1', 'large particulate organic iron')
 
+      call self%register_state_dependency(self%id_conspoc, 'conspoc', 'mol C L-1', 'consumed small particulate organic carbon')
+      call self%register_state_dependency(self%id_prodgoc, 'prodgoc', 'mol C L-1', 'produced large particulate organic carbon')
+
       call self%request_coupling_to_model(self%id_doc, 'dom', 'c')
       call self%request_coupling_to_model(self%id_poc, 'pom', 'c')
       call self%request_coupling_to_model(self%id_goc, 'gom', 'c')
       call self%request_coupling_to_model(self%id_sfe, 'pom', 'fe')
       call self%request_coupling_to_model(self%id_bfe, 'gom', 'fe')
+      call self%request_coupling_to_model(self%id_conspoc, 'pom', 'cons')
+      call self%request_coupling_to_model(self%id_prodgoc, 'gom', 'prod')
       call self%register_dependency(self%id_xdiss, shear_rate)
    end subroutine
 
@@ -86,8 +91,8 @@ contains
          _ADD_SOURCE_(self%id_bfe, + zaggfe)
          _ADD_SOURCE_(self%id_doc, - zaggdoc - zaggdoc2 - zaggdoc3)
          !
-         !conspoc(ji,jj,jk) = conspoc(ji,jj,jk) - zagg + zaggdoc + zaggdoc3
-         !prodgoc(ji,jj,jk) = prodgoc(ji,jj,jk) + zagg + zaggdoc2
+         _ADD_SOURCE_(self%id_conspoc, - zagg + zaggdoc + zaggdoc3)
+         _ADD_SOURCE_(self%id_prodgoc, + zagg + zaggdoc2)
       _LOOP_END_
    end subroutine
 
