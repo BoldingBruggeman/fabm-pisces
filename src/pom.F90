@@ -295,9 +295,10 @@ contains
       real(rk) :: e3t_n1, gdept_n1, ws1, tgfunc1, poc1, cons1, prod1
       logical :: first
       integer :: jn
-      real(rk) :: tgfunc, alphat, remint, zsizek, zsizek1, zpoc, ztremint
+      real(rk) :: tgfunc, alphat, remint, zsizek, zpoc, ztremint
       real(rk) :: alpha(self%jcpoc), alpha1(self%jcpoc)
       real(rk) :: prodn(self%jcpoc), prodn1(self%jcpoc)
+      real(rk) :: expz(self%jcpoc), expz1(self%jcpoc)
 
       _GET_SURFACE_(self%id_hmld, zdep)
 
@@ -360,6 +361,7 @@ contains
 
          tgfunc = EXP( 0.063913_rk * tem )  ! Jorn: Eq 4a in PISCES-v2 paper, NB EXP(0.063913) = 1.066 = b_P
          zsizek = e3t_n / 2. / (ws + rtrn) * tgfunc
+         expz = exp( -self%reminp * zsizek )
 
          !
          ! In the case of GOC, lability is constant in the mixed layer 
@@ -397,9 +399,9 @@ contains
                   ! as the sum of the different sources and sinks
                   ! Please note that production of new GOC experiences
                   ! degradation 
-                  alpha(jn) = alpha1(jn) * exp( -self%reminp(jn) * zsizek ) * zpoc &
+                  alpha(jn) = alpha1(jn) * expz(jn) * zpoc &
                   &   + prodn(jn) / tgfunc / self%reminp(jn)             &  ! Jorn: same for POC, except that GOC->POC conversion [zorem3*alphag] is added to prodgoc*alphan
-                  &   * ( 1. - exp( -self%reminp(jn) * zsizek ) ) * rday   ! Jorn: dropped division by rfact2 as prodn is already per second (unlike in pisces, where it is premultiplied by time step rfact2)
+                  &   * ( 1. - expz(jn) ) * rday   ! Jorn: dropped division by rfact2 as prodn is already per second (unlike in pisces, where it is premultiplied by time step rfact2)
                   alphat = alphat + alpha(jn)
                   remint = remint + alpha(jn) * self%reminp(jn)
                END DO
@@ -415,10 +417,9 @@ contains
                zpoc = max(0., zpoc)
                !
                DO jn = 1, self%jcpoc
-                  alpha(jn) = alpha1(jn) * exp( -self%reminp(jn) * ( zsizek              &
-                  &   + zsizek1 ) ) * zpoc + ( prodn1(jn) / tgfunc1 * ( 1.           &
-                  &   - exp( -self%reminp(jn) * zsizek1 ) ) * exp( -self%reminp(jn) * zsizek ) + prodn(jn) &  ! Jorn: same for POC, except that GOC->POC conversion [zorem3*alphag] is added to prodgoc*alphan
-                  &   / tgfunc * ( 1. - exp( -self%reminp(jn) * zsizek ) ) ) * rday / self%reminp(jn)         ! Jorn: dropped division by rfact2 as prodn is already per second (unlike in pisces, where it is premultiplied by time step rfact2)
+                  alpha(jn) = alpha1(jn) * expz(jn) * expz1(jn) * zpoc + ( prodn1(jn) / tgfunc1 * ( 1.           &
+                  &   - expz1(jn) ) * expz(jn) + prodn(jn) &  ! Jorn: same for POC, except that GOC->POC conversion [zorem3*alphag] is added to prodgoc*alphan
+                  &   / tgfunc * ( 1. - expz(jn) ) ) * rday / self%reminp(jn)         ! Jorn: dropped division by rfact2 as prodn is already per second (unlike in pisces, where it is premultiplied by time step rfact2)
                   alphat = alphat + alpha(jn)
                   remint = remint + alpha(jn) * self%reminp(jn)
                END DO
@@ -444,7 +445,7 @@ contains
          ws1 = ws
          tgfunc1 = tgfunc
          poc1 = poc
-         zsizek1  = zsizek
+         expz1 = expz
          alpha1 = alpha
          cons1 = cons
          prodn1 = prodn
