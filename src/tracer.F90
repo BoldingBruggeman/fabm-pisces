@@ -22,7 +22,6 @@ contains
       class (type_pisces_tracer), intent(inout), target :: self
       integer,                    intent(in)            :: configunit
 
-      character(len=64) :: name
       logical :: has_carbon, has_nitrogen, has_phosphorus, has_silicon, has_iron
 
       call self%get_parameter(has_carbon,     'has_carbon',     '', 'tracer contains carbon',     default=.false.)

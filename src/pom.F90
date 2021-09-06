@@ -292,7 +292,7 @@ contains
 
       real(rk) :: poc, zremi, zdep, gdept_n, e3t_n, ws, tem, cons, prod
       real(rk) :: totprod, totthick, totcons
-      real(rk) :: e3t_n1, gdept_n1, ws1, tgfunc1, poc1, cons1, prod1
+      real(rk) :: e3t_n1, gdept_n1, ws1, tgfunc1, poc1, cons1
       logical :: first
       integer :: jn
       real(rk) :: tgfunc, alphat, remint, zsizek, zpoc, ztremint

@@ -312,7 +312,7 @@ contains
          _GET_SURFACE_(self%id_etot_wm, etot_wm)  ! daily mean Photosynthetically Available Radiation (W m-2) weighted by absorption per waveband, averaged over mixed/euphotic layer
          _GET_SURFACE_(self%id_fr_i, fr_i)        ! sea ice area fraction (1)
 
-         IF (gdept_n > hmld) etot_wm = etot_w     ! below turbocline: the experienced daily mean PAR is the actual in-situ value (not the average over the mixig layer)
+         IF (gdept_n > hmld) etot_wm = etot_w     ! below turbocline: the experienced daily mean PAR is the actual in-situ value (not the average over the mixing layer)
 
          ! ======================================================================================
          ! Jorn: From p4zint
@@ -495,7 +495,7 @@ contains
        !   zfact = 1.e+3 * rfact2r  !  conversion from mol/l/kt to  mol/m3/s
        !   !
          _SET_DIAGNOSTIC_(self%id_PPPHY, zprorca * 1.e+3) ! primary production
-         _SET_DIAGNOSTIC_(self%id_PPNEW, zpronew * 1.e+3) ! primary production
+         _SET_DIAGNOSTIC_(self%id_PPNEW, zpronew * 1.e+3) ! new primary production
          if (self%diatom) _SET_DIAGNOSTIC_(self%id_PBSi, zprorca * 1.e+3 * zysopt) ! biogenic silica production
          _SET_DIAGNOSTIC_(self%id_PFe, zprofe * 1.e+3) ! biogenic iron production
        !   IF( ln_ligand ) THEN

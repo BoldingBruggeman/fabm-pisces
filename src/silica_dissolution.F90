@@ -98,7 +98,7 @@ contains
       zdep = MAX( hmld, heup_01 )
 
       zfacsi = self%xsilab                           ! Jorn: labile fraction of frustule (1)
-      zfacsib = self%xsilab / ( 1.0 - self%xsilab )  ! Jorn: ratio of labile : non-labile fractions of frustule (1)
+      zfacsib = self%xsilab / ( 1.0 - self%xsilab )  ! Jorn: ratio of labile : non-labile fractions of frustule (-)
       _DOWNWARD_LOOP_BEGIN_
          _GET_(self%id_gdept_n, gdept_n)
          _GET_(self%id_tem, tem)
