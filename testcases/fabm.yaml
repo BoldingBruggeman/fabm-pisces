@@ -236,6 +236,7 @@ instances:
       oxy: oxy/O2
       etot: optics/etot
       zdust: dust/zdust
+      etot_ndcy: optics/etot_ndcy
   nitrification:
     model: pisces/nitrification
     coupling:

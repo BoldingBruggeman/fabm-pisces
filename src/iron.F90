@@ -11,10 +11,10 @@ module pisces_iron
 
    type, extends(type_particle_model), public :: type_pisces_iron
       type (type_state_variable_id) :: id_fer, id_sfe, id_bfe
-      type (type_dependency_id) :: id_tempis, id_salinprac, id_xdiss, id_doc, id_poc, id_goc, id_cal, id_gsi, id_hi, id_oxy, id_etot, id_gdept_n, id_zdust
-      type (type_surface_dependency_id) :: id_gphit
+      type (type_dependency_id) :: id_tempis, id_salinprac, id_xdiss, id_doc, id_poc, id_goc, id_cal, id_gsi, id_hi, id_oxy, id_etot, id_gdept_n, id_zdust, id_etot_ndcy
+      type (type_surface_dependency_id) :: id_gphit, id_fr_i
       type (type_diagnostic_variable_id) :: id_scav, id_coll, id_Fe3, id_FeL1, id_zTL1
-      real(rk) :: ligand, xlam1, xlamdust, kfep, wdust
+      real(rk) :: ligand, xlam1, xlamdust, kfep, wdust, light
    contains
       procedure :: initialize
       procedure :: do
@@ -33,6 +33,7 @@ contains
       call self%get_parameter(self%xlam1, 'xlam1', 'd-1 umol-1 L', 'scavenging rate', default=0.005_rk)
       call self%get_parameter(self%xlamdust, 'xlamdust', 'd-1 mg-1 L', 'scavenging rate of dust', default=150.0_rk)
       call self%get_parameter(self%kfep, 'kfep', 'd-1', 'nanoparticle formation rate constant', default=0.01_rk)
+      call self%get_parameter(self%light, 'light', 'W m-2', 'light limitation parameter for photolysis', default=50._rk)
 
       call self%register_state_dependency(self%id_fer, 'fer', 'mol Fe L-1', 'iron')
       call self%register_state_dependency(self%id_sfe, 'sfe', 'mol Fe L-1', 'small particulate organic iron')
@@ -66,6 +67,8 @@ contains
       call self%register_dependency(self%id_tempis, standard_variables%temperature) ! TODO should be in-situ temperature (as opposed to conservative/potential)
       call self%register_dependency(self%id_salinprac, standard_variables%practical_salinity)
       call self%register_dependency(self%id_zdust, 'zdust', 'g m-2', 'dust concentration')
+      call self%register_dependency(self%id_etot_ndcy, 'etot_ndcy', 'W m-2', 'daily mean PAR')
+      call self%register_dependency(self%id_fr_i, standard_variables%ice_area_fraction)
    end subroutine
 
    subroutine do(self, _ARGUMENTS_DO_)
@@ -76,6 +79,7 @@ contains
       real(rk) :: ztkel, zsal, zis, fekeq, ztkel1, fesol(5)
       real(rk) :: ztotlig, zTL1, zkeq, zfesatur, ztfe, zFe3, zFeL1, zdust, zhplus, fe3sol, zfeequi, zfecoll, precip, ztrc
       real(rk) :: zxlam, zlam1a, zlam1b, zscave, zdenom1, zdenom2, zlamfac, zdep, zcoag, zaggdfea, zaggdfeb
+      real(rk) :: etot_ndcy, fr_i, zlight, zsoufer
 
       _LOOP_BEGIN_
          _GET_(self%id_fer, fer)
@@ -213,6 +217,13 @@ contains
          !   plig =  MAX( 0., ( ( zFeL1 * 1E-9 ) / ( fer +rtrn ) ) )
          !   !
          !ENDIF
+
+         ! Additional non-conservative iron production controlled by light, e.g., photolysis, OA 2021-09-03 [from p4zsed, nitrogen fixation section]
+         _GET_(self%id_etot_ndcy, etot_ndcy)
+         _GET_SURFACE_(self%id_fr_i, fr_i)
+         zlight  =  ( 1.- EXP( -etot_ndcy / self%light ) ) * ( 1. - fr_i )  ! Jorn: light limitation of diazotrophs (Eq 58b), reused here for iron photolysis
+         zsoufer = zlight * 2E-11 / ( 2E-11 + fer )                         ! Jorn: limitation factor that is 1 when ambient iron is zero, and 0 in iron-replete environments
+         _ADD_SOURCE_(self%id_fer, + 0.002 * 4E-10 * zsoufer / rday)        ! Jorn : dropped multiplication with rfact2 [time step in seconds]
 
       _LOOP_END_
    end subroutine

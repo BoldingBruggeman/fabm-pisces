@@ -64,7 +64,7 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
       real(rk) :: nh4, no3, po4, biron, ztemp, etot_ndcy, fr_i, doc
-      real(rk) :: zlight, zsoufer, zmudia, xdianh4, xdiano3, zlim, zfact, ztrfer, ztrpo4, ztrdp, nitrpot
+      real(rk) :: zlight, zmudia, xdianh4, xdiano3, zlim, zfact, ztrfer, ztrpo4, ztrdp, nitrpot
 
       _LOOP_BEGIN_
          _GET_(self%id_nh4, nh4)
@@ -77,7 +77,6 @@ contains
          _GET_SURFACE_(self%id_fr_i, fr_i)
 
          zlight  =  ( 1.- EXP( -etot_ndcy / self%diazolight ) ) * ( 1. - fr_i )  ! Jorn: Eq 58b last term
-         zsoufer = zlight * 2E-11 / ( 2E-11 + biron )                            ! Jorn: ???
 
          !                      ! Potential nitrogen fixation dependant on temperature and iron
          zmudia = MAX( 0.,-0.001096*ztemp**2 + 0.057*ztemp -0.637 ) * 7.625
@@ -104,8 +103,7 @@ contains
          _ADD_SOURCE_(self%id_sfe, + 30E-6 * zfact * 1.0 / 3.0 * 2.0 / 3.0) ! remaining 1/3 of fixation is sent to POM pool, 2/3 of which small
          _ADD_SOURCE_(self%id_bfe, + 30E-6 * zfact * 1.0 / 3.0 * 1.0 / 3.0) ! remaining 1/3 of fixation is sent to POM pool, 1/3 of which large
 
-         _ADD_SOURCE_(self%id_biron, + 0.002 * 4E-10 * zsoufer / rday)   ! Jorn : dropped multiplication with rfact2 [time step in seconds]
-         _ADD_SOURCE_(self%id_po4, + self%concdnh4 / ( self%concdnh4 + po4 )  * 0.001 * doc * xstep)   ! Jorn: ???? seems to have nothing to do with N2 fixation? adsorption to DOC? why diatom half sat?
+         _ADD_SOURCE_(self%id_po4, + self%concdnh4 / ( self%concdnh4 + po4 )  * 0.001 * doc * xstep)   ! Jorn: parameterization to allow DOP use by phytoplankton, represented by non-conservative production term to work around constant C:N:P in DOM (OA 2021-09-03)
 
          _SET_DIAGNOSTIC_(self%id_Nfix, zfact * rno3 * 1.e3_rk)
       _LOOP_END_

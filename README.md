@@ -47,7 +47,7 @@ A `fabm.yaml` file with the PISCES configuration is provided under `<PISCESDIR>/
 The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10.5194/gmd-8-2465-2015) where possible. However, the PISCES version that the code is based on (NEMO r4.0-HEAD.r13720) has already evolved beyond the description in the paper. Thus, there are several differences between the code and the paper. We will attempt to track these here:
 
 * phytoplankton maximum growth rate [its reference value at 0 degrees Celsius] is 0.6 d-1 in paper, 0.8 d-1 in code.
-* particulate organic mater (POC, GOC) remineralisation is now depth-dependent and calculated using a configurable number of lability classes (`p4zpoc.F90`). This has replaced Eq 38.
+* particulate organic mater (POC, GOC) remineralisation is now depth-dependent and calculated using a configurable number of lability classes (`p4zpoc.F90`). This has replaced Eq 38. See also [Aumont et al. 2017](https://doi.org/10.5194/bg-14-2321-2017).
 * exponent for silicate dissolution (`p4zrem.F90`) is 9 in Eq 52 of paper, but 9.25 in code. The latter matches the [Ridgwell paper](https://doi.org/10.1029/2002GB001877).
 * quadratic mortality of diatoms depends in a different way on nutrient limitation than described in the paper (Eq 13)
 * quadratic and linear mortality of nanophytoplankton is now modified by cell size
@@ -92,16 +92,6 @@ our lack of understanding of what that original code does.
                zfactcal = MIN( 1., 1.3 * ( 0.2 - zfactcal ) / ( 0.4 - zfactcal ) )
 ```
 Does `zfactcal` represent the preserved fraction, as hinted at by the paper and matching the fact that it increases with increasing saturation [= decreasing `zfactcal`]? Or does it represent the dissolved fraction, as it is treated in the original PISCES code? In the latter case, however, `excess` takes negative values when the water is supersaturated. This leads to `zfactcal` being positive and dissolution occuring. Is that intentional? It leads to further oversaturation and even faster dissolution - a positive feedback.
-* The nitrogen fixation section in `p4zsed.F90` contains non-conservative DOC-related production of PO4 that seems unrelated to nitrogen fixation, depends on a half-saturation from diatoms, and is not documented in the PISCES paper. What does this represent?
-```
-                  tra(ji,jj,jk,jppo4) = tra(ji,jj,jk,jppo4) + concdnh4 / ( concdnh4 + trb(ji,jj,jk,jppo4) ) &
-                  &                     * 0.001 * trb(ji,jj,jk,jpdoc) * xstep
-```
-
-* There is non-conservative iron production in `p4zsed.F90`, linked to diazotrophs via `zsoufer`. What process does this represent?
-```
-                  tra(ji,jj,jk,jpfer) = tra(ji,jj,jk,jpfer) + 0.002 * 4E-10 * zsoufer(ji,jj,jk) * rfact2 / rday
-```
 * Bacterial uptake of iron in `p4zrem.F90` uses a hardcoded maximum phytoplankton growth rate of 0.6 d-1 (at 0 degrees Celsius). That matches the paper, but not the latest PISCES code, in which this constant has been replaced by 0.8 d-1. Should the bacterial uptake constant not be replaced too?
 * why the different treatment of POC and GOC remineralisation (constant for GOC, but dynamically calculated for POC) in the mixed layer (`p4zpoc.F90`)? 
 * about pom remineralisation (`p4zpoc.F90`): why is the POC production due to GOC disaggregation proportional to `zorem3(ji,jj,jk) * alphag(ji,jj,jk,jn)` instead of `reminp(jn) * alphag(ji,jj,jk,jn)`? (in other words: why does it depend on the *mean* remineraliation rate instead of on the lability-class-specific rate?). And why is this GOC->POC conversion not taken into acccount within the mixed layer as additional POC production term? Why is the specific consumption rate in the mixed layer computed by first calculating the specific rate and then depth-integrating it, instead of computing the integral of consumption and dividing that by the integral of POC concentration?
