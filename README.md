@@ -39,7 +39,6 @@ A `fabm.yaml` file with the PISCES configuration is provided under `<PISCESDIR>/
 * enable iron input fom sediments throughout the column using coast and island mask (now restricted to bottom only)
 * much of the chemistry code (`p4zche.F90` in the original code) uses in-situ temperature. For the moment we substitute the native temperature provided by the host (hydrodynamic model), which often is potential or conservative temperature.
 * support for an iron ligand tracer (`lk_ligand`, `p4z_ligand.F90`) is currently not implemented [also not used in default PISCES configuration]
-* check light fields: Are they for horizontal average of entire grid cell, or ice-free section only? What do the various processes expect?
 * check dust inputs for top layer (why no dissolution at the center in the original PISCES code?)
 * depth-dependent sinking velocity of large POM not implemented yet [but also not used in default parameterization]
 

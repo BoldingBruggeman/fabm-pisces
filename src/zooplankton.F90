@@ -331,7 +331,7 @@ contains
          _ADD_SOURCE_(self%id_pof_waste, + zgraztotf * self%unass + self%ferat * zmortzgoc)
          _ADD_SOURCE_(self%id_poc_waste_prod, + zgraztotc * self%unass + zmortzgoc)
 
-         ! Fractionation (break-up of large POM into small POM)
+         ! Fractionation (break-up of large POM into small POM due to flux/filter feeding)
          _ADD_SOURCE_(self%id_poc, + zfrac)
          _ADD_SOURCE_(self%id_sfe, + zfracfe)
          _ADD_SOURCE_(self%id_goc, - zfrac)

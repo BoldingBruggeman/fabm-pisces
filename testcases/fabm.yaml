@@ -244,6 +244,7 @@ instances:
       oxy: oxy/O2       
       nitrfac: oxy/nitrfac
       emoy: optics/emoy
+      etot: optics/etot
   nitrogen_fixation:
     model: pisces/nitrogen_fixation
     coupling:

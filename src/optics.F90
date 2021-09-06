@@ -1,5 +1,12 @@
 #include "fabm_driver.h"
 
+! Note: as in the original PISCES code, we provide radiative fluxes (etot_ndcy, etot, pe1, pe2, pe3, emoy, zpar)
+! for the *ice-free part* of the water.
+! That is, downwelling irradiance just below the surface, which is averaged over the grid cell, is divided by (1 - ice_area_fraction)
+! in order to get downwelling irradiance in the ice-free part of the grid cell (NB this assumes no light penetrates the ice!)
+! NB the only PISCES variable that is already grid cell averaged (and not for the ice-free part) is etot3, but that variable is not
+! used within PISCES, but only by NEMO for the heating of the water column due to light absorption.
+
 module pisces_optics
    use fabm_types
    use fabm_expressions
@@ -52,15 +59,15 @@ contains
       call self%register_dependency(self%id_fr_i, standard_variables%ice_area_fraction)
       call self%register_dependency(self%id_hmld, mixed_layer_thickness_defined_by_vertical_tracer_diffusivity)
 
-      call self%register_diagnostic_variable(self%id_pe1, 'pe1', 'W m-2', 'daily mean PAR in blue band', source=source_do_column)
-      call self%register_diagnostic_variable(self%id_pe2, 'pe2', 'W m-2', 'daily mean PAR in green band', source=source_do_column)
-      call self%register_diagnostic_variable(self%id_pe3, 'pe3', 'W m-2', 'daily mean PAR in red band', source=source_do_column)
-      call self%register_diagnostic_variable(self%id_etot_ndcy, 'etot_ndcy', 'W m-2', 'daily mean PAR', source=source_do_column)
-      call self%register_diagnostic_variable(self%id_etot, 'etot', 'W m-2', 'instantaneous PAR', source=source_do_column)
+      call self%register_diagnostic_variable(self%id_pe1, 'pe1', 'W m-2', 'daily mean PAR in blue band [in ice-free water]', source=source_do_column)
+      call self%register_diagnostic_variable(self%id_pe2, 'pe2', 'W m-2', 'daily mean PAR in green band [in ice-free water]', source=source_do_column)
+      call self%register_diagnostic_variable(self%id_pe3, 'pe3', 'W m-2', 'daily mean PAR in red band [in ice-free water]', source=source_do_column)
+      call self%register_diagnostic_variable(self%id_etot_ndcy, 'etot_ndcy', 'W m-2', 'daily mean PAR [in ice-free water]', source=source_do_column)
+      call self%register_diagnostic_variable(self%id_etot, 'etot', 'W m-2', 'instantaneous PAR [in ice-free water]', source=source_do_column)
       call self%register_diagnostic_variable(self%id_heup, 'heup', 'm', 'euphotic layer depth', source=source_do_column)
-      call self%register_diagnostic_variable(self%id_heup_01, 'heup_01', 'm', 'depth where daily mean PAR equals 0.5 W m-2', source=source_do_column)
-      call self%register_diagnostic_variable(self%id_emoy, 'emoy', 'W m-2', 'instantaneous PAR averaged over mixing layer', source=source_do_column)
-      call self%register_diagnostic_variable(self%id_zpar, 'zpar', 'W m-2', 'daily mean PAR averaged over mixing layer', source=source_do_column)
+      call self%register_diagnostic_variable(self%id_heup_01, 'heup_01', 'm', 'depth where daily mean PAR [in ice-free water] equals 0.5 W m-2', source=source_do_column)
+      call self%register_diagnostic_variable(self%id_emoy, 'emoy', 'W m-2', 'instantaneous PAR averaged over mixing layer [in ice-free water]', source=source_do_column)
+      call self%register_diagnostic_variable(self%id_zpar, 'zpar', 'W m-2', 'daily mean PAR averaged over mixing layer [in ice-free water]', source=source_do_column)
    end subroutine initialize
 
    subroutine do_column(self, _ARGUMENTS_DO_COLUMN_)
@@ -79,6 +86,10 @@ contains
       _GET_SURFACE_(self%id_qsr_mean, qsr_mean)  ! daily mean shortwave radiation (W m-2)
       _GET_SURFACE_(self%id_hmld, hmld)          ! mixing layer depth (m)
       _GET_SURFACE_(self%id_fr_i, fr_i)          ! sea ice area fraction (1)
+
+      ! Convert to below-surface irradiances in ice-free part of the grid cell
+      qsr      = qsr      / (1. - fr_i + rtrn)
+      qsr_mean = qsr_mean / (1. - fr_i + rtrn)
 
       !  Real shortwave - Jorn: Eq 5a, zqsr is PAR for a single waveband, total par is split equally over R-G-B
       ! Note that SWR is assumed to be just below the water surface:
@@ -146,8 +157,8 @@ contains
          _SET_DIAGNOSTIC_(self%id_etot, etot)
 
          gdepw_n = gdepw_n + e3t_n
-         IF (first .or. etot_ndcy >= pqsr100)                         heup    = gdepw_n  ! Euphotic layer depth
-         IF (first .or. etot_ndcy >= 0.50 * (1._rk - fr_i + rtrn))    heup_01 = gdepw_n  ! Euphotic layer depth (light level definition)
+         IF (first .or. etot_ndcy >= pqsr100) heup    = gdepw_n  ! Euphotic layer depth
+         IF (first .or. etot_ndcy >= 0.50)    heup_01 = gdepw_n  ! Euphotic layer depth (light level definition)
 
          IF (gdepw_n <= hmld) THEN
             zetmp1 = zetmp1 + etot      * e3t_n   ! integrating instantaneous PAR

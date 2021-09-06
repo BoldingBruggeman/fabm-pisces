@@ -76,7 +76,7 @@ contains
          _GET_(self%id_etot_ndcy, etot_ndcy)
          _GET_SURFACE_(self%id_fr_i, fr_i)
 
-         zlight  =  ( 1.- EXP( -etot_ndcy / self%diazolight ) ) * ( 1. - fr_i )  ! Jorn: Eq 58b last term. TODO: should etot_ndcy be for ice-free water?
+         zlight  =  ( 1.- EXP( -etot_ndcy / self%diazolight ) ) * ( 1. - fr_i )  ! Jorn: Eq 58b last term
          zsoufer = zlight * 2E-11 / ( 2E-11 + biron )                            ! Jorn: ???
 
          !                      ! Potential nitrogen fixation dependant on temperature and iron
