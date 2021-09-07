@@ -351,7 +351,7 @@ contains
          !
          zprcaca = self%part * zprcaca
          _ADD_SOURCE_(self%id_dic, + zgrazcal - zprcaca)
-         _ADD_SOURCE_(self%id_tal, 2._rk * (zgrazcal - zprcaca))
+         _ADD_SOURCE_(self%id_tal, 2._rk * (zgrazcal - zprcaca))   ! Jorn: change in sign of zgrazcal compared to p4zmeso, confirmed necessary by OA 2021-07-15
          _ADD_SOURCE_(self%id_cal, - zgrazcal + zprcaca)
          _SET_DIAGNOSTIC_(self%id_pcal, zprcaca * 1e3_rk)
       _LOOP_END_
