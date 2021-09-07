@@ -17,7 +17,7 @@ module pisces_dom_remineralization
       type (type_diagnostic_variable_id) :: id_febact, id_blim
 
       real(rk) :: xremik, xkdoc, concno3, concnh4, concfe
-      real(rk) :: feratb, xkferb
+      real(rk) :: feratb, xkferb, mumax0
    contains
       procedure :: initialize
       procedure :: do
@@ -46,6 +46,7 @@ contains
       call self%get_parameter(self%concnh4, 'concnh4', 'mol C L-1', 'ammonium/phosphate half-saturation constant', default=2.E-8_rk)! ???? 0.003 umol N or P/L in paper
       call self%get_parameter(self%concfe, 'concfe', 'mol Fe L-1', 'iron half-saturation constant', default=1.E-11_rk)
 
+      call self%get_parameter(self%mumax0, 'mumax0', 'd-1', 'maximum iron uptake rate of bacteria at 0 degrees Celsius', default=0.6_rk)
       call self%get_parameter(self%feratb, 'feratb', 'mol Fe (mol C)-1', 'Fe/C quota in bacteria', default=10.E-6_rk)
       call self%get_parameter(self%xkferb, 'xkferb', 'mol Fe L-1', 'half-saturation constant for bacteria Fe/C', default=3.E-10_rk)
 
@@ -170,13 +171,13 @@ contains
          ! Bacteries are obliged to take up iron from the water. Some
          ! studies (especially at Papa) have shown this uptake to be significant
          ! ----------------------------------------------------------
-         zbactfer = self%feratb * 0.6_rk / rday * tgfunc * xlimbacl     & ! Jorn: Eq 63, mu_P hardcoded to 0.6 (as in paper), but in latest code has evolved to 0.8. Dropped multiplication with rfact2 [time step in seconds]
+         zbactfer = self%feratb * self%mumax0 / rday * tgfunc * xlimbacl     & ! Jorn: Eq 63, mu now configurable (defaulting to 0.6, OA 2021-09-03), dropped multiplication with rfact2 [time step in seconds]
             &              * fer / ( self%xkferb + fer )    &
             &              * zdepprod * zdepeff * zdepbac
          _ADD_SOURCE_(self%id_fer, - zbactfer*0.33_rk)
          _ADD_SOURCE_(self%id_sfe, + zbactfer*0.25_rk)
          _ADD_SOURCE_(self%id_bfe, + zbactfer*0.08_rk)
-         _SET_DIAGNOSTIC_(self%id_febact, zbactfer * 0.33_rk)   ! Jorn: the remaining fraction of Fe taken up by bacteria ends is no longer tracked (non-conservative loss!)
+         _SET_DIAGNOSTIC_(self%id_febact, zbactfer * 0.33_rk)
          blim      = xlimbacl  * zdepbac / 1.e-6_rk * zdepprod
          _SET_DIAGNOSTIC_(self%id_blim, blim)
 
