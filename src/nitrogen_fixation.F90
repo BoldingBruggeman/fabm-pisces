@@ -10,7 +10,7 @@ module pisces_nitrogen_fixation
    private
 
    type, extends(type_particle_model), public :: type_pisces_nitrogen_fixation
-      type (type_state_variable_id) :: id_no3, id_nh4, id_po4, id_biron, id_tal, id_doc, id_poc, id_goc, id_sfe, id_bfe, id_oxy
+      type (type_state_variable_id) :: id_no3, id_nh4, id_po4, id_biron, id_tal, id_doc, id_poc, id_goc, id_sfe, id_bfe, id_oxy, id_dic
       type (type_dependency_id) :: id_tem, id_etot_ndcy
       type (type_surface_dependency_id) :: id_fr_i
       type (type_diagnostic_variable_id) :: id_Nfix
@@ -47,6 +47,7 @@ contains
       call self%register_state_dependency(self%id_bfe, 'bfe', 'mol Fe L-1', 'large particulate organic iron')
       call self%register_state_dependency(self%id_tal, standard_variables%alkalinity_expressed_as_mole_equivalent)
       call self%register_state_dependency(self%id_oxy, 'oxy', 'mol O2 L-1', 'oxygen')
+      call self%register_state_dependency(self%id_dic, standard_variable=standard_variables%mole_concentration_of_dissolved_inorganic_carbon)
 
       call self%request_coupling_to_model(self%id_doc, 'dom', 'c')
       call self%request_coupling_to_model(self%id_poc, 'pom', 'c')
@@ -99,6 +100,7 @@ contains
          _ADD_SOURCE_(self%id_poc, + zfact * 1.0 / 3.0 * 2.0 / 3.0) ! remaining 1/3 of fixation is sent to POM pool, 2/3 of which small
          _ADD_SOURCE_(self%id_goc, + zfact * 1.0 / 3.0 * 1.0 / 3.0) ! remaining 1/3 of fixation is sent to POM pool, 1/3 of which large
          _ADD_SOURCE_(self%id_oxy, + ( o2ut + o2nit ) * zfact * 2.0 / 3.0 + o2nit * zfact / 3.0)
+         _ADD_SOURCE_(self%id_dic, - zfact * 2.0 / 3.0)             ! 2/3 of fixation is directed to DOM and POM pools and therefore removed from DIC
          _ADD_SOURCE_(self%id_biron, - 30E-6 * zfact * 1.0 / 3.0)   ! total Fe needed for fixation [hardcoded Fe/C ratio of 30 umol Fe/mol C], minus 2/3 returned to ambient dissolved pools
          _ADD_SOURCE_(self%id_sfe, + 30E-6 * zfact * 1.0 / 3.0 * 2.0 / 3.0) ! remaining 1/3 of fixation is sent to POM pool, 2/3 of which small
          _ADD_SOURCE_(self%id_bfe, + 30E-6 * zfact * 1.0 / 3.0 * 1.0 / 3.0) ! remaining 1/3 of fixation is sent to POM pool, 1/3 of which large

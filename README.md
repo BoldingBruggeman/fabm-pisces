@@ -8,6 +8,10 @@ the runtime configuration (`fabm.yaml`), no code change or recompilation needed.
 be needed to fully support such configurations. Specifically, the zooplankton code would need to be changed to
 handle a runtime-configurable number of prey types.
 
+The FABM port includes a few recent fixes of the PISCES code that were not in the original r4.0-HEAD.r13720 version:
+
+* Nitrogen fixation has been corrected to conserve carbon by adding a loss term for dissolved inorganic carbon (OA 2021-09-07)
+
 ## How to build
 
 This code must be compiled together with FABM. To do this, provide the following additional arguments to cmake [when you build FABM](https://github.com/fabm-model/fabm/wiki/Building-and-installing): `-DFABM_INSTITUTES=pisces -DFABM_PISCES_BASE=<PISCESDIR>`
@@ -96,4 +100,4 @@ Does `zfactcal` represent the preserved fraction, as hinted at by the paper and 
 * about pom remineralisation (`p4zpoc.F90`): why is the POC production due to GOC disaggregation proportional to `zorem3(ji,jj,jk) * alphag(ji,jj,jk,jn)` instead of `reminp(jn) * alphag(ji,jj,jk,jn)`? (in other words: why does it depend on the *mean* remineraliation rate instead of on the lability-class-specific rate?). And why is this GOC->POC conversion not taken into acccount within the mixed layer as additional POC production term? Why is the specific consumption rate in the mixed layer computed by first calculating the specific rate and then depth-integrating it, instead of computing the integral of consumption and dividing that by the integral of POC concentration?
 * dust dissolution (`p4zsed.F90`) has two parts: instantaneous dissolution upon deposition at the surface, and (slower) dissolution throughout the column. But why does the latter not apply to the (center of) the top layer? (the responsible loop starts at `jk=2`) That introduces a grid scale dependence of the model solution (it depends on the thickness of the top layer)
 * Assuming `dust` is in g m-2 s-1 and `wdust` in m d-1, shouldn't `wdust` be divided by `rday` instead of multiplied by it in `CALL iom_put( "pdust"  , dust(:,:) / ( wdust * rday )  * tmask(:,:,1) ) ` (in `p4zsed.F90`)
-* Nitrogen fixation does not currently conserve carbon, as it produces DOC and POC, but without removing carbon elsewhere. Is that intentional? Or should there be an additional `- zfact * 2.0 / 3.0` be added to the sources-minus-sinks of DIC, for instance?
+
