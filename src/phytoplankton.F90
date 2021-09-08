@@ -88,7 +88,7 @@ contains
 
       call self%get_parameter(self%diatom, 'diatom', '', 'use silicate', default=.false.)
       call self%get_parameter(self%calcify, 'calcify', '', 'calcify', default=.false.)
-      call self%get_parameter(self%mumax0, 'mumax0', 'd-1', 'growth rate at 0 degrees Celsius', default=0.8_rk)    ! default=0.8 in NEMO-PISCES 4 code, confirmed by Olivier Aumont 2021-04-21
+      call self%get_parameter(self%mumax0, 'mumax0', 'd-1', 'maximum growth rate at 0 degrees Celsius', default=0.8_rk)    ! default=0.8 in NEMO-PISCES 4 code, confirmed by Olivier Aumont 2021-04-21
       call self%get_parameter(self%bresp, 'bresp', 'd-1', 'basal respiration', default=0.033_rk)
       call self%get_parameter(self%pislope_s, 'pislope_s', 'g C (g Chl)-1 (W m-2)-1 d-1', 'P-I slope for small cells', default=2._rk)
       call self%get_parameter(self%pislope_l, 'pislope_l', 'g C (g Chl)-1 (W m-2)-1 d-1', 'P-I slope for large cells', default=2._rk)
@@ -445,27 +445,8 @@ contains
             chlcm_n   = MIN ( self%chlcm, ( self%chlcm / (1. - 1.14 / 43.4 *tem)) * (1. - 1.14 / 43.4 * 20.))  ! temperature correction of max Chl?
             zprochl = zprochl + (chlcm_n-self%chlcmin) * 12. * zprod / &
                                     & (  zpislopead * ztot +rtrn)
-            _ADD_SOURCE_(self%id_ch, zprochl * self%texcret)
-
-            !   Update the arrays TRA which contain the biological sources and sinks
-            zproreg  = zprorca - zpronew    ! Regenerated production, equivalent to Eq 8 (part 2)
-            zdocprod = self%excret * zprorca
-            _ADD_SOURCE_(self%id_po4, - zprorca)
-            _ADD_SOURCE_(self%id_no3, - zpronew)
-            _ADD_SOURCE_(self%id_nh4, - zproreg)
-            _ADD_SOURCE_(self%id_c, zprorca * self%texcret)
-            _ADD_SOURCE_(self%id_fe, zprofe * self%texcret)
-            _ADD_SOURCE_(self%id_doc, zdocprod)
-            _ADD_SOURCE_(self%id_oxy, o2ut * zproreg + ( o2ut + o2nit ) * zpronew)
-            !
-            _ADD_SOURCE_(self%id_biron, -self%texcret * zprofe)
-            if (self%diatom) then
-               _ADD_SOURCE_(self%id_si, zprorca * zysopt * self%texcret)
-               _ADD_SOURCE_(self%id_sil, -self%texcret * zprorca * zysopt)
-            end if
-            _ADD_SOURCE_(self%id_dic, -zprorca)
-            _ADD_SOURCE_(self%id_tal, rno3 * zpronew - rno3 * zproreg)
          ELSE
+            zprochl = 0._rk
             zprorca = 0._rk
             zpronew = 0._rk
             zprofe = 0._rk
@@ -473,6 +454,27 @@ contains
             zpr = 0._rk
             quota = 1._rk
          ENDIF
+
+         _ADD_SOURCE_(self%id_ch, zprochl * self%texcret)
+
+         !   Update the arrays TRA which contain the biological sources and sinks
+         zproreg  = zprorca - zpronew    ! Regenerated production, equivalent to Eq 8 (part 2)
+         zdocprod = self%excret * zprorca
+         _ADD_SOURCE_(self%id_po4, - zprorca)
+         _ADD_SOURCE_(self%id_no3, - zpronew)
+         _ADD_SOURCE_(self%id_nh4, - zproreg)
+         _ADD_SOURCE_(self%id_c, zprorca * self%texcret)
+         _ADD_SOURCE_(self%id_fe, zprofe * self%texcret)
+         _ADD_SOURCE_(self%id_doc, zdocprod)
+         _ADD_SOURCE_(self%id_oxy, o2ut * zproreg + ( o2ut + o2nit ) * zpronew)
+         !
+         _ADD_SOURCE_(self%id_biron, -self%texcret * zprofe)
+         if (self%diatom) then
+            _ADD_SOURCE_(self%id_si, zprorca * zysopt * self%texcret)
+            _ADD_SOURCE_(self%id_sil, -self%texcret * zprorca * zysopt)
+         end if
+         _ADD_SOURCE_(self%id_dic, -zprorca)
+         _ADD_SOURCE_(self%id_tal, rno3 * zpronew - rno3 * zproreg)
 
          !
          !IF( ln_ligand ) THEN
