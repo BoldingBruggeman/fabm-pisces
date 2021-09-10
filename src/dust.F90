@@ -71,7 +71,7 @@ contains
          _ADD_SURFACE_FLUX_(self%id_po4, zpdep)
          _ADD_SURFACE_FLUX_(self%id_fer, zirondep)
          _SET_SURFACE_DIAGNOSTIC_(self%id_zirondep, zirondep * 1.e+3)
-         _SET_SURFACE_DIAGNOSTIC_(self%id_pdust, dust / ( self%wdust * rday ))
+         _SET_SURFACE_DIAGNOSTIC_(self%id_pdust, dust / ( self%wdust / rday ))
       _SURFACE_LOOP_END_
    end subroutine
 
