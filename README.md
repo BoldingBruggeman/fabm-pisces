@@ -12,6 +12,7 @@ The FABM port includes a few recent fixes of the PISCES code that were not in th
 
 * Nitrogen fixation has been corrected to conserve carbon by adding a loss term for dissolved inorganic carbon (OA 2021-09-07)
 * Corrected the sign of the alkalinity contributon of calcite dissolution in zooplankton gut, associated with flux/filter feeding (OA 2021-07-15)
+* Corrected pdust diagnostic (OA 2021-09-09)
 
 ## How to build
 
