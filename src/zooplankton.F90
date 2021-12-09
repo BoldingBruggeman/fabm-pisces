@@ -19,7 +19,7 @@ module pisces_zooplankton
       type (type_dependency_id)     :: id_tem, id_nitrfac, id_quotan, id_quotad, id_xfracal, id_wspoc, id_wsgoc
       type (type_diagnostic_variable_id) :: id_zfezoo, id_zgrazing, id_zfrac, id_pcal
 
-      real(rk) :: grazrat, resrat, xkmort, mzrat, xthresh, xkgraz, ferat, epsher, epshermin, unass, sigma, part, grazflux
+      real(rk) :: grazrat, logbz, resrat, xkmort, mzrat, xthresh, xkgraz, ferat, epsher, epshermin, unass, sigma, part, grazflux
       real(rk) :: xthreshdia, xthreshphy, xthreshzoo, xthreshpoc
       real(rk) :: xprefn, xprefz, xprefd, xprefc, xsizedia, xdismort, phlim
    contains
@@ -38,6 +38,7 @@ contains
       call self%get_parameter(self%unass, 'unass', '1', 'non-assimilated fraction', default=0.3_rk, minimum=0._rk, maximum=1._rk)
       call self%get_parameter(self%sigma, 'sigma', '1', 'excretion as dissolved organic matter', default=0.6_rk, minimum=0._rk, maximum=1._rk)
       call self%get_parameter(self%grazrat, 'grazrat', 'd-1', 'maximum grazing rate', minimum=0._rk)
+      call self%get_parameter(self%logbz, 'logbz', '-', '(log of) Temperature sensitivity of grazing rate',default=0.07608_rk) ! AC 07.12.2021 
       call self%get_parameter(self%grazflux, 'grazflux', '(m mol C L-1)-1', 'flux-feeding rate', minimum=0._rk)
       call self%get_parameter(self%xkgraz, 'xkgraz', 'mol C L-1', 'half-saturation constant for grazing', default=20.e-6_rk, minimum=0._rk)
       call self%get_parameter(self%xprefn, 'xprefn', '-', 'preference for nanophytoplankton', minimum=0._rk)
@@ -157,7 +158,8 @@ contains
          _GET_(self%id_tem, tem)
          _GET_(self%id_nitrfac, nitrfac)
 
-         tgfunc2 = EXP( 0.07608_rk  * tem )         ! Jorn: from p4zint.F90, equivalent to Eq 25b as NB EXP(0.07608) = 1.079 = b_Z
+!         tgfunc2 = EXP( 0.07608_rk  * tem )        ! Jorn: from p4zint.F90, equivalent to Eq 25b as NB EXP(0.07608) = 1.079 = b_Z
+         tgfunc2 = EXP( self%logbz  * tem )         ! AC: set log(bz) as parameter.
 
          zcompa = MAX( ( c - 1.e-9_rk ), 0.e0_rk )
          zfact   = xstep * tgfunc2 * zcompa
