@@ -218,7 +218,7 @@ contains
          zgrazp    = zgraze  * self%xprefn * zcompaph  * zdenom2     ! Jorn: ingestion of nanophytoplankton carbon
          zgrazpoc  = zgraze  * self%xprefc * zcompapoc * zdenom2     ! Jorn: ingestion of POC
          zgrazd    = zgraze  * self%xprefd * zcompadi  * zdenom2     ! Jorn: ingestion of diatom carbon
-         zgrazz    = zgraze  * self%xprefd * zcompaz   * zdenom2     ! Jorn: ingestion of microzooplankton carbon
+         zgrazz    = zgraze  * self%xprefz * zcompaz   * zdenom2     ! Jorn: ingestion of microzooplankton carbon
 
          ! Jorn: compute specific loss rates for prey carbon, and apply those to prey iron too
          zgrazpf   = zgrazp    * nfe / (phy + rtrn)   ! Jorn: ingestion of nanophytoplankton Fe
