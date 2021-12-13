@@ -28,6 +28,7 @@ module pisces_phytoplankton
       logical :: diatom
       logical :: calcify
       real(rk) :: mumax0
+      real(rk) :: bp
       real(rk) :: logbp
       real(rk) :: fpday
       real(rk) :: bresp
@@ -91,7 +92,9 @@ contains
       call self%get_parameter(self%diatom, 'diatom', '', 'use silicate', default=.false.)
       call self%get_parameter(self%calcify, 'calcify', '', 'calcify', default=.false.)
       call self%get_parameter(self%mumax0, 'mumax0', 'd-1', 'maximum growth rate at 0 degrees Celsius', default=0.8_rk)    ! default=0.8 in NEMO-PISCES 4 code, confirmed by Olivier Aumont 2021-04-21
-      call self%get_parameter(self%logbp, 'logbp', '-', '(log of) Temperature sensitivity of growth', default=0.063913_rk) ! AC -07.12.2021 - Aumont et al. 2015, Table 1, Eq. 4a, Using log(b_p) instead of b_p. 
+      call self%get_parameter(self%logbp, 'logbp', '-', '(log of) Temperature sensitivity of growth', default=0.063913_rk) ! AC -07.12.2021 - Aumont et al. 2015, Table 1, Eq. 4a, Using log(b_p) instead of b_p.
+      call self%get_parameter(self%bp, 'bp', '-', 'Temperature sensitivity of growth',default=1.066_rk)
+      call self%get_parameter(self%logbp, 'logbp', '-', 'Temperature sensitivity of growth (log rate, overwrites bp if given explicitely)', default= log(self%bp))
       call self%get_parameter(self%fpday, 'fpday', '-', 'day-length factor for growth', default=1.5_rk) ! AC -07.12.2021 - Aumont et al. 2015, Eq 3a
       call self%get_parameter(self%bresp, 'bresp', 'd-1', 'basal respiration', default=0.033_rk)
       call self%get_parameter(self%pislope_s, 'pislope_s', 'g C (g Chl)-1 (W m-2)-1 d-1', 'P-I slope for small cells', default=2._rk)
@@ -321,7 +324,7 @@ contains
          ! ======================================================================================
          ! Jorn: From p4zint
          !tgfunc = EXP( 0.063913 * tem )  ! Jorn: Eq 4a in PISCES-v2 paper, NB EXP(0.063913) = 1.066 = b_P
-         tgfunc = EXP( self%logbp * tem )  ! AC 07.12.2021 - replaced hard-coded value with parameter for bp. Log(bp) considered instead of bp for perturbation purposes).
+         tgfunc = EXP( self%logbp * tem ) ! AC 07.12.2021 - replaced hard-coded value with parameter for bp. Log(bp) considered instead of bp for perturbation purposes).
          ! ======================================================================================
 
          ! ======================================================================================
