@@ -28,6 +28,8 @@ module pisces_phytoplankton
       logical :: diatom
       logical :: calcify
       real(rk) :: mumax0
+      real(rk) :: logbp
+      real(rk) :: fpday
       real(rk) :: bresp
       real(rk) :: pislope_s
       real(rk) :: pislope_l
@@ -84,14 +86,19 @@ contains
       class (type_par),                      pointer :: par_model
       class (type_silicate_half_saturation), pointer :: silicate_half_saturation
 
+      real(rk) :: bp
+      
       allocate(par_model)
 
       call self%get_parameter(self%diatom, 'diatom', '', 'use silicate', default=.false.)
       call self%get_parameter(self%calcify, 'calcify', '', 'calcify', default=.false.)
       call self%get_parameter(self%mumax0, 'mumax0', 'd-1', 'maximum growth rate at 0 degrees Celsius', default=0.8_rk)    ! default=0.8 in NEMO-PISCES 4 code, confirmed by Olivier Aumont 2021-04-21
+      call self%get_parameter(bp, 'bp', '-', 'Temperature sensitivity of growth',default=1.066_rk)
+      call self%get_parameter(self%logbp, 'logbp', '-', 'Temperature sensitivity of growth (log rate, overwrites bp if given explicitely)', default= log(bp))
+      call self%get_parameter(self%fpday, 'fpday', '-', 'day-length factor for growth', default=1.5_rk) ! AC -07.12.2021 - Aumont et al. 2015, Eq 3a
       call self%get_parameter(self%bresp, 'bresp', 'd-1', 'basal respiration', default=0.033_rk)
       call self%get_parameter(self%pislope_s, 'pislope_s', 'g C (g Chl)-1 (W m-2)-1 d-1', 'P-I slope for small cells', default=2._rk)
-      call self%get_parameter(self%pislope_l, 'pislope_l', 'g C (g Chl)-1 (W m-2)-1 d-1', 'P-I slope for large cells', default=2._rk)
+      call self%get_parameter(self%pislope_l, 'pislope_l', 'g C (g Chl)-1 (W m-2)-1 d-1', 'P-I slope for large cells', default=self%pislope_s) ! AC -07.12.2021 - changed default value to pislope_s to ensure common perturbation.
       call self%get_parameter(self%xadap, 'xadap', '-', 'acclimation factor to low light', default=0._rk)
       call self%get_parameter(self%excret, 'excret', '1', 'fraction of production that is excreted', default=0.05_rk)
       call self%get_parameter(par_model%beta1, 'beta1', '1', 'absorption in blue part of the light')
@@ -316,7 +323,8 @@ contains
 
          ! ======================================================================================
          ! Jorn: From p4zint
-         tgfunc = EXP( 0.063913 * tem )  ! Jorn: Eq 4a in PISCES-v2 paper, NB EXP(0.063913) = 1.066 = b_P
+         !tgfunc = EXP( 0.063913 * tem )  ! Jorn: Eq 4a in PISCES-v2 paper, NB EXP(0.063913) = 1.066 = b_P
+         tgfunc = EXP( self%logbp * tem ) ! AC 07.12.2021 - replaced hard-coded value with parameter for bp. Log(bp) considered instead of bp for perturbation purposes).
          ! ======================================================================================
 
          ! ======================================================================================
@@ -370,7 +378,8 @@ contains
                zval = zval * MIN(1._rk, heup_01 / ( hmld + rtrn ))   ! Jorn: when in mixing layer, multiply with fraction of time spent in euphotic depth; it seems to be an easier-to-understand substitute for Eq 3b-3d
             ENDIF
             zmxl_chl = zval / 24._rk  ! Jorn: from number of hours to fraction of day
-            zmxl_fac = 1.5_rk * zval / ( 12._rk + zval )  ! Jorn: Eq 3a in PISCES-v2 paper - but note that time spent in euphotic layer has already been incorporated in zval! Eqs 3b-3d are not used
+            !zmxl_fac = 1.5_rk * zval / ( 12._rk + zval )  ! Jorn: Eq 3a in PISCES-v2 paper - but note that time spent in euphotic layer has already been incorporated in zval! Eqs 3b-3d are not used
+            zmxl_fac = self%fpday * zval / ( 12._rk + zval )  ! AC 07.12.2021 - fpday as parameter 
 
             zpr = zprmax * zmxl_fac  ! Jorn: product of muP and f1*f2 (sort of - those have been changed) in Eq 2a, units are 1/s
 
