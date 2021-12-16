@@ -84,20 +84,3 @@ The code refers to the equations in the [the PISCES-v2 paper](https://doi.org/10
 * dust dissolution is now a source of PO4 throughout the column (surface only in the paper)
 * the dust concentration now decays exponentially with depth. Likely that is to account for dissolution while it sinks.
 * ...
-
-## Questions to PISCES authors
-
-In many cases, answers to these questions would help decide how to implement particular functionality in the FABM port of PISCES.
-In some cases, the questions could potentially point to minor issues in the PISCES code. It is more likely, however, that they reflect
-our lack of understanding of what that original code does.
-
-* in `p4zsed.F90`, calcite dissolution in sediment depends on the calcite saturation state of the overlying water (Eq 91 in paper): 
-```
-               zfactcal = MIN( excess(ji,jj,ikt), 0.2 )
-               zfactcal = MIN( 1., 1.3 * ( 0.2 - zfactcal ) / ( 0.4 - zfactcal ) )
-```
-Does `zfactcal` represent the preserved fraction, as hinted at by the paper and matching the fact that it increases with increasing saturation [= decreasing `zfactcal`]? Or does it represent the dissolved fraction, as it is treated in the original PISCES code? In the latter case, however, `excess` takes negative values when the water is supersaturated. This leads to `zfactcal` being positive and dissolution occuring. Is that intentional? It leads to further oversaturation and even faster dissolution - a positive feedback.
-* why the different treatment of POC and GOC remineralisation (constant for GOC, but dynamically calculated for POC) in the mixed layer (`p4zpoc.F90`)? 
-* about pom remineralisation (`p4zpoc.F90`): why is the POC production due to GOC disaggregation proportional to `zorem3(ji,jj,jk) * alphag(ji,jj,jk,jn)` instead of `reminp(jn) * alphag(ji,jj,jk,jn)`? (in other words: why does it depend on the *mean* remineraliation rate instead of on the lability-class-specific rate?). And why is this GOC->POC conversion not taken into acccount within the mixed layer as additional POC production term? Why is the specific consumption rate in the mixed layer computed by first calculating the specific rate and then depth-integrating it, instead of computing the integral of consumption and dividing that by the integral of POC concentration?
-* dust dissolution (`p4zsed.F90`) has two parts: instantaneous dissolution upon deposition at the surface, and (slower) dissolution throughout the column. But why does the latter not apply to the (center of) the top layer? (the responsible loop starts at `jk=2`) That introduces a grid scale dependence of the model solution (it depends on the thickness of the top layer)
-
