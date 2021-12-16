@@ -24,34 +24,28 @@ module pisces_pom
       type (type_state_variable_id) :: id_c, id_fe, id_si, id_cal
       type (type_state_variable_id) :: id_poc, id_sfe, id_doc, id_fer
       type (type_bottom_state_variable_id) :: id_bc, id_bfe, id_bsi, id_bcal
-      type (type_diagnostic_variable_id) :: id_ws, id_prod, id_cons
-      type (type_dependency_id)     :: id_zremi, id_e3t_n
+      type (type_diagnostic_variable_id) :: id_ws, id_prodc, id_consc
+      type (type_dependency_id)     :: id_e3t_n
 
-      type (type_diagnostic_variable_id), allocatable :: id_prodn(:)
-      type (type_dependency_id),          allocatable :: id_alpha(:)
+      type (type_diagnostic_variable_id), allocatable :: id_c_prodn(:)
+      type (type_dependency_id),          allocatable :: id_prodn(:)
       type (type_state_variable_id),      allocatable :: id_sprodn(:)
 
       real(rk) :: solgoc
       real(rk) :: ws, wsmax, wsscale
-   contains
-      procedure :: initialize
-      procedure :: do
-      procedure :: do_bottom
-   end type
 
-   type, extends(type_particle_model) :: type_pisces_lability
       type (type_surface_dependency_id) :: id_hmld
-      type (type_dependency_id) :: id_tem, id_gdept_n, id_e3t_n, id_ws, id_cons, id_prod, id_poc
+      type (type_dependency_id) :: id_tem, id_gdept_n, id_cons, id_prod
       type (type_diagnostic_variable_id) :: id_zremi
       type (type_diagnostic_variable_id), allocatable :: id_alpha(:)
-      type (type_dependency_id),          allocatable :: id_prodn(:)
       logical :: mlvar
       integer :: jcpoc
       real(rk) :: xremip, rshape
       real(rk), allocatable :: alphan(:), reminp(:)
    contains
-      procedure :: initialize => lability_initialize
-      procedure :: do_column  => lability_do_column
+      procedure :: initialize
+      procedure :: do_column
+      procedure :: do_bottom
    end type
 
 contains
@@ -63,9 +57,10 @@ contains
       logical                                          :: has_silicon, has_calcite
       class (type_pisces_calcite_dissolution), pointer :: calcite_dissolution
       class (type_pisces_silica_dissolution),  pointer :: silica_dissolution
-      class (type_pisces_lability),            pointer :: lability
       integer                                          :: jn
       character(len=4)                                 :: strindex
+      integer :: ifault
+      real(rk) :: remindelta, reminup, remindown
 
       call self%get_parameter(has_silicon, 'has_silicon', '', 'particulate tracer contains silica',  default=.false.)
       call self%get_parameter(has_calcite, 'has_calcite', '', 'particulate tracer contains calcite', default=.false.)
@@ -83,6 +78,9 @@ contains
       call self%register_state_variable(self%id_fe, 'fe', 'mol Fe L-1', 'iron concentration', initial_value=9.84e-13_rk, vertical_movement=-self%ws * r1_rday)
       call self%add_to_aggregate_variable(standard_variables%total_iron, self%id_fe, scale_factor=1e9_rk)
 
+      self%id_c%sms%link%target%source = source_do_column
+      self%id_fe%sms%link%target%source = source_do_column
+
       if (has_calcite) then
          call self%register_state_variable(self%id_cal, 'cal', 'mol C L-1', 'calcite concentration', initial_value=1.04e-8_rk, vertical_movement=-self%ws * r1_rday)
          call self%add_to_aggregate_variable(standard_variables%total_carbon, self%id_cal, scale_factor=1e6_rk)
@@ -99,9 +97,9 @@ contains
          allocate(silica_dissolution)
          call self%add_child(silica_dissolution, 'silica_dissolution')
          call silica_dissolution%request_coupling(silica_dissolution%id_gsi, '../si')
-         call silica_dissolution%request_coupling('rate/ws', '../ws')
+         call silica_dissolution%request_coupling('ws', '../ws')
          call silica_dissolution%request_coupling(silica_dissolution%id_sil, '../../sil/si')  ! Jorn: hack, TODO fix!!
-         call silica_dissolution%request_coupling('rate/heup_01', '../../optics/heup_01')  ! Jorn: hack, TODO fix!!
+         call silica_dissolution%request_coupling('heup_01', '../../optics/heup_01')  ! Jorn: hack, TODO fix!!
       end if
 
       ! Couple to benthic pools to deposit sinking material in.
@@ -114,9 +112,6 @@ contains
       call self%request_coupling_to_model(self%id_bsi, 'sed', 'si')
       call self%request_coupling_to_model(self%id_bfe, 'sed', 'fe')
       call self%request_coupling_to_model(self%id_bcal, 'sed', 'cal')
-      call self%register_dependency(self%id_e3t_n, standard_variables%cell_thickness)
-
-      allocate(lability)
 
       ! Here we compute the GOC -> POC rate due to the shrinking
       ! of the fecal pellets/aggregates as a result of bacterial
@@ -125,127 +120,17 @@ contains
       ! slope of -3.6 (identical to what is used in p4zsink to compute
       ! aggregation
       call self%get_parameter(self%solgoc, 'solgoc', '-', 'fraction broken down to smaller POM', default=0.04_rk/ 2.56 * 1./ ( 1.-50**(-0.04) ))
-      call self%get_parameter(lability%mlvar, 'mlvar', '-', 'lability varies in mixing layer', default=.false.)
-      call self%get_parameter(lability%xremip, 'xremip', '-', 'remineralisation rate', default=0.035_rk)
-      call self%get_parameter(lability%jcpoc, 'jcpoc', '', 'number of lability classes', default=15)
-      call self%get_parameter(lability%rshape, 'rshape', '-', 'shape of the gamma function', default=1._rk)
-
-      call self%add_child(lability, 'lability')
-      call lability%request_coupling(lability%id_poc, '../c')
-      call lability%request_coupling(lability%id_ws, '../ws')
-      call lability%request_coupling(lability%id_prod, '../prod_sms_tot')
-      call lability%request_coupling(lability%id_cons, '../cons_sms_tot')
-
-      call self%register_state_dependency(self%id_doc, 'doc', 'mol C L-1', 'dissolved organic carbon')
-      call self%register_state_dependency(self%id_fer, 'fer', 'mol C L-1', 'iron')
-      call self%request_coupling_to_model(self%id_doc, 'dom', 'c')
-
-      if (self%solgoc /= 0._rk) then
-         call self%register_state_dependency(self%id_poc, 'poc', 'mol C L-1', 'small particulate organic carbon')
-         call self%register_state_dependency(self%id_sfe, 'sfe', 'mol C L-1', 'small particulate organic iron')
-         call self%request_coupling_to_model(self%id_poc, 'spom', 'c')
-         call self%request_coupling_to_model(self%id_sfe, 'spom', 'fe')
-      end if
-
-      call self%register_dependency(self%id_zremi, 'zremi', 's-1', 'remineralization rate')
-      call self%request_coupling(self%id_zremi, 'lability/zremi')
-
-      call self%register_diagnostic_variable(self%id_prod, 'prod', 'mol C L-1', 'produced particulate organic carbon', &
-         act_as_state_variable=.true., source=source_constant, output=output_none)
-      call self%register_diagnostic_variable(self%id_cons, 'cons', 'mol C L-1', 'consumed particulate organic carbon', &
-         act_as_state_variable=.true., source=source_constant, output=output_none)
-
-      allocate(self%id_prodn(lability%jcpoc), self%id_alpha(lability%jcpoc), self%id_sprodn(lability%jcpoc))
-      do jn = 1, lability%jcpoc
-         write (strindex, '(i0)') jn
-         call self%register_diagnostic_variable(self%id_prodn(jn), 'prod' // trim(strindex), 'mol C L-1', 'produced particulate organic carbon in lability class ' // trim(strindex), &
-            act_as_state_variable=.true., source=source_constant, output=output_none)
-         call lability%request_coupling(lability%id_prodn(jn), '../prod' // trim(strindex) // '_sms_tot')
-
-         if (self%solgoc /= 0._rk) then
-            call self%register_dependency(self%id_alpha(jn), 'alpha' // trim(strindex), '1', 'fraction in lability class ' // trim(strindex))
-            call self%request_coupling(self%id_alpha(jn), 'lability/alpha' // trim(strindex))
-
-            call self%register_state_dependency(self%id_sprodn(jn), 'sprod' // trim(strindex), 'mol C L-1', 'produced small particulate organic carbon in lability class ' // trim(strindex))
-            call self%request_coupling_to_model(self%id_sprodn(jn), 'spom', 'prod' // trim(strindex))
-         end if
-      end do
-   end subroutine
-
-   subroutine do(self, _ARGUMENTS_DO_)
-      class (type_pisces_pom), intent(in) :: self
-      _DECLARE_ARGUMENTS_DO_
-
-      real(rk) :: c, fe, zremi, zorem, zofer, alpha
-      integer  :: jn
-
-      _LOOP_BEGIN_
-         _GET_(self%id_c, c)
-         _GET_(self%id_fe, fe)
-         _GET_(self%id_zremi, zremi)
-         zorem = zremi * c
-         zofer = zremi * fe
-         _ADD_SOURCE_(self%id_c,   - (1._rk + self%solgoc) * zorem)
-         _ADD_SOURCE_(self%id_fe,  - (1._rk + self%solgoc) * zofer)
-         _ADD_SOURCE_(self%id_doc, + zorem)
-         _ADD_SOURCE_(self%id_fer, + zofer)
-         if (self%solgoc /= 0._rk) then
-            _ADD_SOURCE_(self%id_poc, + self%solgoc * zorem)
-            _ADD_SOURCE_(self%id_sfe, + self%solgoc * zofer)
-            do jn = 1, size(self%id_alpha)
-               _GET_(self%id_alpha(jn), alpha)
-               _ADD_SOURCE_(self%id_sprodn(jn), + self%solgoc * alpha * zorem)
-            end do
-         end if
-      _LOOP_END_
-   end subroutine
-
-   subroutine do_bottom(self, _ARGUMENTS_DO_BOTTOM_)
-      class (type_pisces_pom), intent(in) :: self
-      _DECLARE_ARGUMENTS_DO_BOTTOM_
-
-      real(rk) :: ws, e3t_n, c, fe, si, cal
-
-      _BOTTOM_LOOP_BEGIN_
-         _GET_(self%id_e3t_n, e3t_n)
-         ws = min(0.99_rk * e3t_n / maxdt, self%ws * xstep)   ! Jorn: protect against CFL violation as in p4zsed.F90
-         _GET_(self%id_c, c)
-         _ADD_BOTTOM_FLUX_(self%id_c, -ws * c)
-         _ADD_BOTTOM_SOURCE_(self%id_bc, ws * c * 1.e6_rk)
-         _GET_(self%id_fe, fe)
-         _ADD_BOTTOM_FLUX_(self%id_fe, -ws * fe)
-         _ADD_BOTTOM_SOURCE_(self%id_bfe, ws * fe * 1.e9_rk)
-         if (_VARIABLE_REGISTERED_(self%id_si)) then
-            _GET_(self%id_si, si)
-            _ADD_BOTTOM_FLUX_(self%id_si, -ws * si)
-            _ADD_BOTTOM_SOURCE_(self%id_bsi, ws * si * 1.e6_rk)
-         end if
-         if (_VARIABLE_REGISTERED_(self%id_cal)) then
-            _GET_(self%id_cal, cal)
-            _ADD_BOTTOM_FLUX_(self%id_cal, -ws * cal)
-            _ADD_BOTTOM_SOURCE_(self%id_bcal, ws * cal * 1.e6_rk)
-         end if
-      _BOTTOM_LOOP_END_
-   end subroutine
-
-   subroutine lability_initialize(self, configunit)
-      class (type_pisces_lability), intent(inout), target :: self
-      integer,                      intent(in)            :: configunit
-
-      integer :: jn, ifault
-      real(rk) :: remindelta, reminup, remindown
-      character(len=4) :: strindex
+      call self%get_parameter(self%mlvar, 'mlvar', '-', 'lability varies in mixing layer', default=.false.)
+      call self%get_parameter(self%xremip, 'xremip', '-', 'remineralisation rate', default=0.035_rk)
+      call self%get_parameter(self%jcpoc, 'jcpoc', '', 'number of lability classes', default=15)
+      call self%get_parameter(self%rshape, 'rshape', '-', 'shape of the gamma function', default=1._rk)
 
       call self%register_diagnostic_variable(self%id_zremi, 'zremi', 's-1', 'remineralization rate', source=source_do_column)
 
-      call self%register_dependency(self%id_ws, 'ws', 'm d-1', 'sinking velocity of particulate organic silicon')
       call self%register_dependency(self%id_e3t_n, standard_variables%cell_thickness)
       call self%register_dependency(self%id_gdept_n, standard_variables%depth)
       call self%register_dependency(self%id_hmld, mixed_layer_thickness_defined_by_vertical_tracer_diffusivity)
       call self%register_dependency(self%id_tem, standard_variables%temperature)
-      call self%register_dependency(self%id_poc, 'poc', 'mol C L-1', 'particulate organic carbon')
-      call self%register_dependency(self%id_prod, 'prod', 'mol C L-1 s-1', 'particulate organic carbon sources')
-      call self%register_dependency(self%id_cons, 'cons', 'mol C L-1 s-1', 'particulate organic carbon sinks')
 
       ALLOCATE( self%alphan(self%jcpoc) , self%reminp(self%jcpoc) )
       !
@@ -284,21 +169,92 @@ contains
          call self%register_diagnostic_variable(self%id_alpha(jn), 'alpha' // trim(strindex), '1', 'fraction in class '  // trim(strindex), source=source_do_column)
          call self%register_dependency(self%id_prodn(jn), 'prodn' // trim(strindex), '1', 'particulate organic carbon sources for class '  // trim(strindex))
       end do
+
+      call self%register_state_dependency(self%id_doc, 'doc', 'mol C L-1', 'dissolved organic carbon')
+      call self%register_state_dependency(self%id_fer, 'fer', 'mol C L-1', 'iron')
+      call self%request_coupling_to_model(self%id_doc, 'dom', 'c')
+
+      self%id_doc%sms%link%target%source = source_do_column
+      self%id_fer%sms%link%target%source = source_do_column
+
+      if (self%solgoc /= 0._rk) then
+         call self%register_state_dependency(self%id_poc, 'poc', 'mol C L-1', 'small particulate organic carbon')
+         call self%register_state_dependency(self%id_sfe, 'sfe', 'mol C L-1', 'small particulate organic iron')
+         call self%request_coupling_to_model(self%id_poc, 'spom', 'c')
+         call self%request_coupling_to_model(self%id_sfe, 'spom', 'fe')
+         self%id_poc%sms%link%target%source = source_do_column
+         self%id_sfe%sms%link%target%source = source_do_column
+      end if
+
+      call self%register_diagnostic_variable(self%id_prodc, 'prod', 'mol C L-1', 'produced particulate organic carbon', &
+         act_as_state_variable=.true., source=source_constant, output=output_none)
+      call self%register_diagnostic_variable(self%id_consc, 'cons', 'mol C L-1', 'consumed particulate organic carbon', &
+         act_as_state_variable=.true., source=source_constant, output=output_none)
+
+      call self%register_dependency(self%id_prod, 'prod', 'mol C L-1 s-1', 'particulate organic carbon sources')
+      call self%register_dependency(self%id_cons, 'cons', 'mol C L-1 s-1', 'particulate organic carbon sinks')
+
+      call self%request_coupling(self%id_prod, './prod_sms_tot')
+      call self%request_coupling(self%id_cons, './cons_sms_tot')
+
+      allocate(self%id_c_prodn(self%jcpoc), self%id_sprodn(self%jcpoc))
+      do jn = 1, self%jcpoc
+         write (strindex, '(i0)') jn
+         call self%register_diagnostic_variable(self%id_c_prodn(jn), 'c_prod' // trim(strindex), 'mol C L-1', 'produced particulate organic carbon in lability class ' // trim(strindex), &
+            act_as_state_variable=.true., source=source_constant, output=output_none)
+         call self%request_coupling(self%id_prodn(jn), 'c_prod' // trim(strindex) // '_sms_tot')
+
+         if (self%solgoc /= 0._rk) then
+            call self%register_state_dependency(self%id_sprodn(jn), 'sprod' // trim(strindex), 'mol C L-1', 'produced small particulate organic carbon in lability class ' // trim(strindex))
+            self%id_sprodn(jn)%sms%link%target%source = source_do_column
+            call self%request_coupling_to_model(self%id_sprodn(jn), 'spom', 'c_prod' // trim(strindex))
+         end if
+      end do
    end subroutine
 
-   subroutine lability_do_column(self, _ARGUMENTS_DO_COLUMN_)
-      class (type_pisces_lability), intent(in) :: self
+
+   subroutine do_bottom(self, _ARGUMENTS_DO_BOTTOM_)
+      class (type_pisces_pom), intent(in) :: self
+      _DECLARE_ARGUMENTS_DO_BOTTOM_
+
+      real(rk) :: ws, e3t_n, c, fe, si, cal
+
+      _BOTTOM_LOOP_BEGIN_
+         _GET_(self%id_e3t_n, e3t_n)
+         ws = min(0.99_rk * e3t_n / maxdt, self%ws * xstep)   ! Jorn: protect against CFL violation as in p4zsed.F90
+         _GET_(self%id_c, c)
+         _ADD_BOTTOM_FLUX_(self%id_c, -ws * c)
+         _ADD_BOTTOM_SOURCE_(self%id_bc, ws * c * 1.e6_rk)
+         _GET_(self%id_fe, fe)
+         _ADD_BOTTOM_FLUX_(self%id_fe, -ws * fe)
+         _ADD_BOTTOM_SOURCE_(self%id_bfe, ws * fe * 1.e9_rk)
+         if (_VARIABLE_REGISTERED_(self%id_si)) then
+            _GET_(self%id_si, si)
+            _ADD_BOTTOM_FLUX_(self%id_si, -ws * si)
+            _ADD_BOTTOM_SOURCE_(self%id_bsi, ws * si * 1.e6_rk)
+         end if
+         if (_VARIABLE_REGISTERED_(self%id_cal)) then
+            _GET_(self%id_cal, cal)
+            _ADD_BOTTOM_FLUX_(self%id_cal, -ws * cal)
+            _ADD_BOTTOM_SOURCE_(self%id_bcal, ws * cal * 1.e6_rk)
+         end if
+      _BOTTOM_LOOP_END_
+   end subroutine
+
+   subroutine do_column(self, _ARGUMENTS_DO_COLUMN_)
+      class (type_pisces_pom), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_COLUMN_
 
-      real(rk) :: poc, zremi, zdep, gdept_n, e3t_n, ws, tem, cons, prod
+      real(rk) :: c, fe, zremi, zdep, gdept_n, e3t_n, ws, tem, cons, prod
       real(rk) :: totprod, totthick, totcons
-      real(rk) :: e3t_n1, gdept_n1, ws1, tgfunc1, poc1, cons1
+      real(rk) :: e3t_n1, gdept_n1, ws1, tgfunc1, c1, cons1
       logical :: first
       integer :: jn
       real(rk) :: tgfunc, alphat, remint, zsizek, zpoc, ztremint
       real(rk) :: alpha(self%jcpoc), alpha1(self%jcpoc)
       real(rk) :: prodn(self%jcpoc), prodn1(self%jcpoc)
       real(rk) :: expz(self%jcpoc), expz1(self%jcpoc)
+      real(rk) :: zorem, zofer
 
       _GET_SURFACE_(self%id_hmld, zdep)
 
@@ -316,12 +272,12 @@ contains
                _GET_(self%id_cons, cons)
                _GET_(self%id_prod, prod)
                _GET_(self%id_tem, tem)
-               _GET_(self%id_poc, poc)
-               _GET_(self%id_ws, ws)
+               _GET_(self%id_c, c)
+               ws = self%ws
                tgfunc = EXP( 0.063913_rk * tem )  ! Jorn: Eq 4a in PISCES-v2 paper, NB EXP(0.063913) = 1.066 = b_P
                totprod = totprod + prod * e3t_n * rday
                totthick = totthick + e3t_n * tgfunc
-               totcons = totcons - cons * e3t_n * rday / ( poc + rtrn )   ! Jorn: this accumulates a depth-integrated specific loss rate. But should that not be computed from depth-integrated cons divided by depth-integrated poc?
+               totcons = totcons - cons * e3t_n * rday / ( c + rtrn )   ! Jorn: this accumulates a depth-integrated specific loss rate. But should that not be computed from depth-integrated cons divided by depth-integrated poc?
             ENDIF
          _DOWNWARD_LOOP_END_
 
@@ -348,8 +304,9 @@ contains
          _GET_(self%id_gdept_n, gdept_n)
          _GET_(self%id_e3t_n, e3t_n)
          _GET_(self%id_tem, tem)
-         _GET_(self%id_ws, ws)
-         _GET_(self%id_poc, poc)
+         ws = self%ws
+         _GET_(self%id_c, c)
+         _GET_(self%id_fe, fe)
          _GET_(self%id_cons, cons)
          _GET_(self%id_prod, prod)
 
@@ -384,7 +341,7 @@ contains
                !
                ! POC concentration is computed using the lagrangian 
                ! framework. It is only used for the lability param
-               zpoc = poc1 + cons * rday               &   ! Jorn: dropped division by rfact2 as consgoc is already per second (unlike in pisces, where it is premultiplied by time step rfact2)
+               zpoc = c1 + cons * rday               &   ! Jorn: dropped division by rfact2 as consgoc is already per second (unlike in pisces, where it is premultiplied by time step rfact2)
                &   * e3t_n / 2. / (ws + rtrn)                     ! Jorn: time (d) it takes to sink half the current layer height?
                zpoc = MAX(0., zpoc)
                !
@@ -411,7 +368,7 @@ contains
                ! See the comments in the previous block.
                ! ---------------------------------------------------
                !
-               zpoc = poc1 + cons1 * rday                &   ! Jorn: dropped division by rfact2 as consgoc is already per second (unlike in pisces, where it is premultiplied by time step rfact2)
+               zpoc = c1 + cons1 * rday                &   ! Jorn: dropped division by rfact2 as consgoc is already per second (unlike in pisces, where it is premultiplied by time step rfact2)
                &   * e3t_n1 / 2. / (ws1 + rtrn) + cons   &
                &   * rday * e3t_n / 2. / (ws + rtrn)
                zpoc = max(0., zpoc)
@@ -440,11 +397,25 @@ contains
             _SET_DIAGNOSTIC_(self%id_alpha(jn), alpha(jn))
          END DO
 
+         zorem = zremi * xstep * tgfunc * c
+         zofer = zremi * xstep * tgfunc * fe
+         _ADD_SOURCE_(self%id_c,   - (1._rk + self%solgoc) * zorem)
+         _ADD_SOURCE_(self%id_fe,  - (1._rk + self%solgoc) * zofer)
+         _ADD_SOURCE_(self%id_doc, + zorem)
+         _ADD_SOURCE_(self%id_fer, + zofer)
+         if (self%solgoc /= 0._rk) then
+            _ADD_SOURCE_(self%id_poc, + self%solgoc * zorem)
+            _ADD_SOURCE_(self%id_sfe, + self%solgoc * zofer)
+            do jn = 1, size(self%id_alpha)
+               _ADD_SOURCE_(self%id_sprodn(jn), + self%solgoc * alpha(jn) * zorem)
+            end do
+         end if
+
          e3t_n1 = e3t_n
          gdept_n1 = gdept_n
          ws1 = ws
          tgfunc1 = tgfunc
-         poc1 = poc
+         c1 = c
          expz1 = expz
          alpha1 = alpha
          cons1 = cons
