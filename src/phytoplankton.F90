@@ -584,14 +584,14 @@ contains
 
          !   Update the arrays TRA which contains the biological sources and sinks
 
-         zfactfe = fe/(c+rtrn)
-         zfactch = ch/(c+rtrn)
+         zfactfe = fe * z1_trb
+         zfactch = ch * z1_trb
          _ADD_SOURCE_(self%id_c, - zmortp)
          _ADD_SOURCE_(self%id_ch, - zmortp * zfactch)
          _ADD_SOURCE_(self%id_fe, - zmortp * zfactfe)
          if (self%diatom) then
             _GET_(self%id_si, si)
-            zfactsi = si/(c+rtrn)
+            zfactsi = si * z1_trb
             _ADD_SOURCE_(self%id_si, - zmortp * zfactsi)
             _ADD_SOURCE_(self%id_gsi,  zmortp * zfactsi)
          end if
