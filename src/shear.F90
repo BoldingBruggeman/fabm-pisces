@@ -23,6 +23,8 @@ contains
       class (type_pisces_shear), intent(inout), target :: self
       integer,                   intent(in)            :: configunit
 
+      call self%register_implemented_routines((/source_do/))
+
       call self%register_diagnostic_variable(self%id_xdiss, 'xdiss', 's-1', 'shear rate', standard_variable=shear_rate)
       call self%register_dependency(self%id_gdept_n, standard_variables%depth)
       call self%register_dependency(self%id_hmld, mixed_layer_thickness_defined_by_vertical_tracer_diffusivity)

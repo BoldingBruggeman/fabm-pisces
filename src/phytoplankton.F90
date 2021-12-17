@@ -87,7 +87,9 @@ contains
       class (type_silicate_half_saturation), pointer :: silicate_half_saturation
 
       real(rk) :: bp
-      
+
+      call self%register_implemented_routines((/source_do/))
+
       allocate(par_model)
 
       call self%get_parameter(self%diatom, 'diatom', '', 'use silicate', default=.false.)
@@ -234,6 +236,8 @@ contains
    subroutine par_initialize(self, configunit)
       class (type_par), intent(inout), target :: self
       integer,          intent(in)            :: configunit
+
+      call self%register_implemented_routines((/source_do_column/))
 
       call self%register_diagnostic_variable(self%id_etot, 'etot', 'W m-2', 'daily mean PAR (sum over all wavebands, weighted by absorption coefficients)', source=source_do_column)
       call self%register_diagnostic_variable(self%id_etotm, 'etotm', 'W m-2', 'daily mean PAR averaged over mixed layer (sum over all wavebands, weighted by absorption coefficients)', source=source_do_column)
@@ -616,6 +620,8 @@ contains
    subroutine silicate_half_saturation_initialize(self, configunit)
       class (type_silicate_half_saturation), intent(inout), target :: self
       integer,                               intent(in)            :: configunit
+
+      call self%register_implemented_routines((/source_do_surface/))
 
       call self%register_dependency(self%id_sil, 'sil', 'mol Si L-1', 'silicate')
       call self%register_diagnostic_variable(self%id_xksi, 'xksi', 'mol Si L-1', 'silicate half saturation')

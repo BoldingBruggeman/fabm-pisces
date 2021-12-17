@@ -26,6 +26,8 @@ contains
       class (type_pisces_calcite_dissolution), intent(inout), target :: self
       integer,                                 intent(in)            :: configunit
 
+      call self%register_implemented_routines((/source_do/))
+
       call self%get_parameter(self%kdca, 'kdca', 'month-1', 'dissolution rate constant', default=6._rk)   ! 0.197 d-1 in paper
       call self%get_parameter(self%nca, 'nca', '-', 'exponent in the dissolution rate', default=1._rk)
 

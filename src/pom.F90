@@ -62,6 +62,8 @@ contains
       integer :: ifault
       real(rk) :: remindelta, reminup, remindown
 
+      call self%register_implemented_routines((/source_do, source_do_bottom/))
+
       call self%get_parameter(has_silicon, 'has_silicon', '', 'particulate tracer contains silica',  default=.false.)
       call self%get_parameter(has_calcite, 'has_calcite', '', 'particulate tracer contains calcite', default=.false.)
 

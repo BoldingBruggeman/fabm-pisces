@@ -24,6 +24,8 @@ contains
 
       logical :: has_carbon, has_nitrogen, has_phosphorus, has_silicon, has_iron
 
+      call self%register_implemented_routines()
+
       call self%get_parameter(has_carbon,     'has_carbon',     '', 'tracer contains carbon',     default=.false.)
       call self%get_parameter(has_nitrogen,   'has_nitrogen',   '', 'tracer contains nitrogen',   default=.false.)
       call self%get_parameter(has_phosphorus, 'has_phosphorus', '', 'tracer contains phosphorus', default=.false.)

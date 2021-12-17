@@ -91,6 +91,8 @@ contains
       class (type_pisces_carbonate_chemistry), intent(inout), target :: self
       integer,                                 intent(in)            :: configunit
 
+      call self%register_implemented_routines((/source_do, source_do_surface/))
+
       call self%register_state_variable(self%id_dic, 'DIC', 'mol C L-1', 'dissolved inorganic carbon concentration', &
          standard_variable=standard_variables%mole_concentration_of_dissolved_inorganic_carbon, initial_value=1.99e-3_rk)
       call self%add_to_aggregate_variable(standard_variables%total_carbon, self%id_dic, scale_factor=1e6_rk)

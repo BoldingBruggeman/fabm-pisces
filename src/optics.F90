@@ -41,6 +41,8 @@ contains
 
       real(rk) :: parlux, rn_si0
 
+      call self%register_implemented_routines((/source_do_column/))
+
       call self%get_parameter(self%ln_varpar, 'ln_varpar', '', 'use variable PAR : SWR ratio', default=.true.)
       if (.not. self%ln_varpar) then
          call self%get_parameter(parlux, 'parlux', '-', 'PAR : SWR ratio', default=0.43_rk)

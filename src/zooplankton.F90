@@ -34,7 +34,9 @@ contains
       integer,                         intent(in)            :: configunit
 
       real(rk) :: bz
-      
+
+      call self%register_implemented_routines((/source_do/))
+
       call self%get_parameter(self%epsher, 'epsher', '1', 'maximum growth efficiency', minimum=0._rk, maximum=1._rk)
       call self%get_parameter(self%epshermin, 'epshermin', '1', 'minimum growth efficiency', minimum=0._rk, maximum=1._rk)
       call self%get_parameter(self%unass, 'unass', '1', 'non-assimilated fraction', default=0.3_rk, minimum=0._rk, maximum=1._rk)

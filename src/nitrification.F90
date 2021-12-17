@@ -27,6 +27,8 @@ contains
       class (type_pisces_nitrification), intent(inout), target :: self
       integer,                           intent(in)            :: configunit
 
+      call self%register_implemented_routines((/source_do/))
+
       call self%get_parameter(self%nitrif, 'nitrif', 'd-1', 'NH4 nitrification rate', default=0.05_rk)
 
       call self%register_diagnostic_variable(self%id_nit, 'nit', 'mol N L-1 s-1', 'nitrification')

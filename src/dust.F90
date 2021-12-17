@@ -28,6 +28,8 @@ contains
       class (type_pisces_dust), intent(inout), target :: self
       integer,                  intent(in)            :: configunit
 
+      call self%register_implemented_routines((/source_do, source_do_surface/))
+
       call self%get_parameter(self%ln_solub, 'ln_solub', '', 'variable solubility of iron in dust', default=.true.)
       if (.not. self%ln_solub) call self%get_parameter(self%solub, 'solub', '1', 'solubility of iron in dust', default=0.02_rk)
       call self%get_parameter(self%mfrac, 'mfrac', '1', 'Fe mineral fraction of dust', default=0.035_rk)

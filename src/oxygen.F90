@@ -29,6 +29,8 @@ contains
       class (type_pisces_oxygen), intent(inout), target :: self
       integer,                    intent(in)            :: configunit
 
+      call self%register_implemented_routines((/source_do, source_do_surface/))
+
       call self%get_parameter(self%oxymin, 'oxymin', 'mol O2 L-1', 'half-saturation constant for anoxia', default=1.E-6_rk)
 
       call self%register_state_variable(self%id_oxy, 'O2', 'mol O2 L-1', 'concentration', initial_value=2.47e-4_rk)

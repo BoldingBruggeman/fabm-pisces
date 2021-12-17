@@ -28,6 +28,8 @@ contains
       class (type_pisces_sediment), intent(inout), target :: self
       integer,                      intent(in)            :: configunit
 
+      call self%register_implemented_routines((/source_do_bottom/))
+
       call self%get_parameter(self%sedfeinput, 'sedfeinput', 'mol Fe L-1 d-1 m', 'iron flux from the sediments', default=2.e-9_rk)
 
       call self%register_diagnostic_variable(self%id_SedCal, 'SedCal', 'mol m-2 s-1',    'calcite burial')

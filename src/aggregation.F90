@@ -23,6 +23,8 @@ contains
       class (type_pisces_aggregation), intent(inout), target :: self
       integer,                         intent(in)            :: configunit
 
+      call self%register_implemented_routines((/source_do/))
+
       call self%register_state_dependency(self%id_doc, 'doc', 'mol C L-1', 'dissolved organic carbon')
       call self%register_state_dependency(self%id_poc, 'poc', 'mol C L-1', 'small particulate organic carbon')
       call self%register_state_dependency(self%id_goc, 'goc', 'mol C L-1', 'large particulate organic carbon')

@@ -29,6 +29,8 @@ contains
       class (type_pisces_iron), intent(inout), target :: self
       integer,                  intent(in)            :: configunit
 
+      call self%register_implemented_routines((/source_do/))
+
       call self%get_parameter(self%ligand, 'ligand', 'mol L-1', 'total concentration of iron ligands', default=0.7E-9_rk)
       call self%get_parameter(self%xlam1, 'xlam1', 'd-1 umol-1 L', 'scavenging rate', default=0.005_rk)
       call self%get_parameter(self%xlamdust, 'xlamdust', 'd-1 mg-1 L', 'scavenging rate of dust', default=150.0_rk)

@@ -40,6 +40,8 @@ contains
 
       class (type_pisces_bacteria), pointer :: pbacteria
 
+      call self%register_implemented_routines((/source_do/))
+
       call self%get_parameter(self%xremik, 'xremik', 'd-1', 'remineralization rate', default=0.3_rk)
       call self%get_parameter(self%xkdoc, 'xkdoc', 'mol C L-1', 'DOC half-saturation constant', default=417.E-6_rk)
       call self%get_parameter(self%concno3, 'concno3', 'mol C L-1', 'nitrate half-saturation constant', default=2.E-7_rk)   ! ???? 0.03 umol N/L in paper
@@ -187,6 +189,8 @@ contains
    subroutine bacteria_initialize(self, configunit)
       class (type_pisces_bacteria), intent(inout), target :: self
       integer,                      intent(in)            :: configunit
+
+      call self%register_implemented_routines((/source_do_column/))
 
       call self%register_diagnostic_variable(self%id_bact, 'bact', 'mol C L-1', 'biomass proxy', source=source_do_column)
 

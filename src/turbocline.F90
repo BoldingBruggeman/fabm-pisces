@@ -26,6 +26,8 @@ contains
       class (type_pisces_turbocline), intent(inout), target :: self
       integer,                        intent(in)            :: configunit
 
+      call self%register_implemented_routines((/source_do_column/))
+
       call self%get_parameter(self%avt_c, 'avt_c', 'm2 s-1', 'critical vertical diffusivity', default=5.e-4_rk)
       call self%get_parameter(self%minh, 'minh', 'm', 'minimum thickness', default=10._rk)
 

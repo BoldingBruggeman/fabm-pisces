@@ -27,6 +27,8 @@ contains
       class (type_pisces_nitrogen_fixation), intent(inout), target :: self
       integer,                               intent(in)            :: configunit
 
+      call self%register_implemented_routines((/source_do/))
+
       call self%get_parameter(self%nitrfix, 'nitrfix', 'mol C L-1 d-1', 'maximum nitrogen fixation rate', default=1.e-7_rk)
       call self%get_parameter(self%diazolight, 'diazolight', 'W m-2', 'diazotroph photosynthetic parameter', default=50._rk)
       call self%get_parameter(self%concfediaz, 'concfediaz', 'mol Fe L-1', 'diazotroph half-saturation constant for iron', default=1.e-10_rk)

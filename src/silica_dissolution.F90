@@ -27,6 +27,8 @@ contains
       class (type_pisces_silica_dissolution), intent(inout), target :: self
       integer,                                intent(in)            :: configunit
 
+      call self%register_implemented_routines((/source_do_column/))
+
       call self%get_parameter(self%xsirem, 'xsirem', 'd-1', 'remineralization rate of Si', default=0.003_rk)
       call self%get_parameter(self%xsiremlab, 'xsiremlab', 'd-1', 'fast remineralization rate of Si', default=0.03_rk)
       call self%get_parameter(self%xsilab, 'xsilab', '1', 'labile fraction of biogenic silica', default=0.5_rk)
