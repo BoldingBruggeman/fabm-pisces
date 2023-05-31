@@ -43,7 +43,7 @@ contains
          call self%add_to_aggregate_variable(standard_variables%total_iron, self%id_fe, scale_factor=1e9_rk)
       end if
       if (has_silicon) then
-         call self%register_state_variable(self%id_si, 'si', 'mol Si/L', 'concentration in silicon units')
+         call self%register_state_variable(self%id_si, 'si', 'mol Si L-1', 'concentration in silicon units')
          call self%add_to_aggregate_variable(standard_variables%total_silicate, self%id_si, scale_factor=1e6_rk)
       end if
    end subroutine initialize
