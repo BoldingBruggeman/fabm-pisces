@@ -132,6 +132,10 @@ contains
          zchl = MIN(  10. , MAX( 0.05, zchl )  )
          irgb = NINT( 41 + 20.* LOG10( zchl ) + rtrn )    ! determine index into R-G-B specifc attenuation coefficients based on total chlorophyll
 
+         ! Jorn: ensure index is valid even if zchl is non-finite to prevent crashes due to out-of-bounds rkrgb access
+         ! This in principle makes the MIN( 10. , ...) above redundant
+         irgb = MIN( SIZE( rkrgb, 2 ) , MAX( 1, irgb )  )
+
          ! Note ekb, ekg, ekr are depth-integrated attenuation coefficients,
          ! multiplied by 2 since we increment with a whole e3t_n when moving half a grid cell down.
          ! Thus, they need to be multiplied by 0.5 when taking the final EXP.
