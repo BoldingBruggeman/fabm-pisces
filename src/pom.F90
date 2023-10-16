@@ -73,18 +73,18 @@ contains
       call self%get_parameter(self%wsscale, 'wsscale', 'm', 'length scale of sinking', default=5000._rk)
       call self%register_diagnostic_variable(self%id_ws, 'ws', 'm d-1', 'sinking velocity', missing_value=self%ws, source=source_constant, output=output_none)
 
-      call self%register_state_variable(self%id_c, 'c', 'mol C L-1', 'carbon concentration', initial_value=5.23e-8_rk, vertical_movement=-self%ws * r1_rday)
+      call self%register_state_variable(self%id_c, 'c', 'mol C L-1', 'carbon concentration', initial_value=5.23e-8_rk, vertical_movement=-self%ws * r1_rday, minimum=0.0_rk)
       call self%add_to_aggregate_variable(standard_variables%total_carbon, self%id_c, scale_factor=1e6_rk)
       call self%add_to_aggregate_variable(standard_variables%total_nitrogen, self%id_c, scale_factor=rno3 * 1e6_rk)
       call self%add_to_aggregate_variable(standard_variables%total_phosphorus, self%id_c, scale_factor=po4r * 1e6_rk)
-      call self%register_state_variable(self%id_fe, 'fe', 'mol Fe L-1', 'iron concentration', initial_value=9.84e-13_rk, vertical_movement=-self%ws * r1_rday)
+      call self%register_state_variable(self%id_fe, 'fe', 'mol Fe L-1', 'iron concentration', initial_value=9.84e-13_rk, vertical_movement=-self%ws * r1_rday, minimum=0.0_rk)
       call self%add_to_aggregate_variable(standard_variables%total_iron, self%id_fe, scale_factor=1e9_rk)
 
       self%id_c%sms%link%target%source = source_do_column
       self%id_fe%sms%link%target%source = source_do_column
 
       if (has_calcite) then
-         call self%register_state_variable(self%id_cal, 'cal', 'mol C L-1', 'calcite concentration', initial_value=1.04e-8_rk, vertical_movement=-self%ws * r1_rday)
+         call self%register_state_variable(self%id_cal, 'cal', 'mol C L-1', 'calcite concentration', initial_value=1.04e-8_rk, vertical_movement=-self%ws * r1_rday, minimum=0.0_rk)
          call self%add_to_aggregate_variable(standard_variables%total_carbon, self%id_cal, scale_factor=1e6_rk)
 
          allocate(calcite_dissolution)
@@ -93,7 +93,7 @@ contains
       end if
 
       if (has_silicon) then
-         call self%register_state_variable(self%id_si, 'si', 'mol Si L-1', 'silicon concentration', initial_value=1.53e-8_rk, vertical_movement=-self%ws * r1_rday)
+         call self%register_state_variable(self%id_si, 'si', 'mol Si L-1', 'silicon concentration', initial_value=1.53e-8_rk, vertical_movement=-self%ws * r1_rday, minimum=0.0_rk)
          call self%add_to_aggregate_variable(standard_variables%total_silicate, self%id_si, scale_factor=1e6_rk)
 
          allocate(silica_dissolution)
@@ -142,7 +142,7 @@ contains
          reminup = 1./ 400. * EXP(remindelta)
          !
          ! Discretization based on incomplete gamma functions
-         ! As incomplete gamma functions are not available in standard 
+         ! As incomplete gamma functions are not available in standard
          ! fortran 95, they have been coded as functions in this module (gamain)
          ! ---------------------------------------------------------------------
          !
@@ -286,7 +286,7 @@ contains
          alphat = 0.0
          remint = 0.0
          DO jn = 1, self%jcpoc
-            ! For each lability class, the system is supposed to be 
+            ! For each lability class, the system is supposed to be
             ! at equilibrium: Prod - Sink - w alphap = 0.
             alpha(jn) = totprod * self%alphan(jn) / ( self%reminp(jn)    &
             &                     * totthick + totcons + ws + rtrn )
@@ -323,7 +323,7 @@ contains
          expz = exp( -self%reminp * zsizek )
 
          !
-         ! In the case of GOC, lability is constant in the mixed layer 
+         ! In the case of GOC, lability is constant in the mixed layer
          ! It is computed only below the mixed layer depth
          ! ------------------------------------------------------------
          !
@@ -333,15 +333,15 @@ contains
             !
             !
             IF ( gdept_n1 <= zdep ) THEN
-               ! 
-               ! The first level just below the mixed layer needs a 
+               !
+               ! The first level just below the mixed layer needs a
                ! specific treatment because lability is supposed constant
-               ! everywhere within the mixed layer. This means that 
+               ! everywhere within the mixed layer. This means that
                ! change in lability in the bottom part of the previous cell
                ! should not be computed
                ! ----------------------------------------------------------
                !
-               ! POC concentration is computed using the lagrangian 
+               ! POC concentration is computed using the lagrangian
                ! framework. It is only used for the lability param
                zpoc = c1 + cons * rday               &   ! Jorn: dropped division by rfact2 as consgoc is already per second (unlike in pisces, where it is premultiplied by time step rfact2)
                &   * e3t_n / 2. / (ws + rtrn)                     ! Jorn: time (d) it takes to sink half the current layer height?
@@ -349,7 +349,7 @@ contains
                !
                DO jn = 1, self%jcpoc
                   !
-                  ! Lagrangian based algorithm. The fraction of each 
+                  ! Lagrangian based algorithm. The fraction of each
                   ! lability class is computed starting from the previous
                   ! level
                   ! -----------------------------------------------------
@@ -357,7 +357,7 @@ contains
                   ! the concentration of each lability class is calculated
                   ! as the sum of the different sources and sinks
                   ! Please note that production of new GOC experiences
-                  ! degradation 
+                  ! degradation
                   alpha(jn) = alpha1(jn) * expz(jn) * zpoc &
                   &   + prodn(jn) / tgfunc / self%reminp(jn)             &  ! Jorn: same for POC, except that GOC->POC conversion [zorem3*alphag] is added to prodgoc*alphan
                   &   * ( 1. - expz(jn) ) * rday   ! Jorn: dropped division by rfact2 as prodn is already per second (unlike in pisces, where it is premultiplied by time step rfact2)
@@ -644,7 +644,7 @@ contains
 !
 !  Parameters:
 !
-!    Input, real ( kind = 8 ) X, P, the parameters of the incomplete 
+!    Input, real ( kind = 8 ) X, P, the parameters of the incomplete
 !    gamma ratio.  0 <= X, and 0 < P.
 !
 !    Output, integer ( kind = 4 ) IFAULT, error flag.

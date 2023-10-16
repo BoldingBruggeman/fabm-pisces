@@ -33,7 +33,7 @@ contains
 
       call self%get_parameter(self%oxymin, 'oxymin', 'mol O2 L-1', 'half-saturation constant for anoxia', default=1.E-6_rk)
 
-      call self%register_state_variable(self%id_oxy, 'O2', 'mol O2 L-1', 'concentration', initial_value=2.47e-4_rk)
+      call self%register_state_variable(self%id_oxy, 'O2', 'mol O2 L-1', 'concentration', initial_value=2.47e-4_rk, minimum=0.0_rk)
       call self%register_diagnostic_variable(self%id_chemo2, 'chemo2', 'mol O2 (L atm)-1', 'solubility')
       call self%register_diagnostic_variable(self%id_nitrfac, 'nitrfac', '1', 'denitrication factor')
       call self%register_diagnostic_variable(self%id_Oflx, 'Oflx', 'mol m-2 s-1', 'air-sea O2 flux')
@@ -98,7 +98,7 @@ contains
       class (type_pisces_oxygen), intent(in) :: self
       _DECLARE_ARGUMENTS_DO_SURFACE_
 
-      real(rk), parameter ::   xconv  = 0.01_rk / 3600._rk   !: coefficients for conversion 
+      real(rk), parameter ::   xconv  = 0.01_rk / 3600._rk   !: coefficients for conversion
       real(rk), parameter ::   atm_per_pa = 1._rk / 101325._rk
 
       real(rk) :: oxy, tempis, salinprac, wndm, fr_i, patm
@@ -117,13 +117,13 @@ contains
 
          ztc  = MIN( 35._rk, tempis )
          ztc2 = ztc * ztc
-         ztc3 = ztc * ztc2 
+         ztc3 = ztc * ztc2
          ztc4 = ztc2 * ztc2
 
          ! Compute the schmidt Number
          zsch_o2  = 1920.4_rk - 135.6_rk  * ztc + 5.2122_rk * ztc2 - 0.109390_rk * ztc3 + 0.0009377_rk * ztc4
 
-         !  wind speed 
+         !  wind speed
          zws  = wndm * wndm
 
          ! Compute the piston velocity for O2 and CO2

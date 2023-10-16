@@ -64,7 +64,7 @@ contains
       call self%get_parameter(self%xdismort, 'xdismort', '1', 'fraction of quadratic mortality directed to nutrient pools', default=( 1._rk - self%epsher - self%unass ) /( 1._rk - self%epsher ), minimum=0._rk, maximum=1._rk)
       call self%get_parameter(self%phlim, 'phlim', '1', 'relative grazing on nanophytoplankton if cells are small', minimum=0._rk, maximum=1._rk)
 
-      call self%register_state_variable(self%id_c, 'c', 'mol C L-1', 'carbon')
+      call self%register_state_variable(self%id_c, 'c', 'mol C L-1', 'carbon', minimum=0.0_rk)
       call self%add_to_aggregate_variable(standard_variables%total_carbon, self%id_c, scale_factor=1e6_rk)
       call self%add_to_aggregate_variable(standard_variables%total_nitrogen, self%id_c, scale_factor=rno3 * 1e6_rk)
       call self%add_to_aggregate_variable(standard_variables%total_phosphorus, self%id_c, scale_factor=po4r * 1e6_rk)
@@ -244,7 +244,7 @@ contains
          zgraztotc = zgrazd + zgrazp + zgrazz + zgrazpoc + zgrazffep + zgrazffeg   ! Jorn: this seems to be potential ingestion, since zgrazffep and zgrazffeg will later be scaled with proportion of filter feeders, zproport
          ! Compute the proportion of filter feeders
          zproport  = (zgrazffep + zgrazffeg)/(rtrn + zgraztotc)
-         ! Compute fractionation of aggregates. It is assumed that 
+         ! Compute fractionation of aggregates. It is assumed that
          ! diatoms based aggregates are more prone to fractionation
          ! since they are more porous (marine snow instead of fecal pellets)
          zratio    = gsi / ( goc + rtrn )
@@ -267,12 +267,12 @@ contains
          ! Grazing by microzooplankton
          _SET_DIAGNOSTIC_(self%id_zgrazing, zgraztotc * 1e3_rk)
 
-         ! Microzooplankton efficiency. 
+         ! Microzooplankton efficiency.
          ! We adopt a formulation proposed by Mitra et al. (2007)
          ! The gross growth efficiency is controled by the most limiting nutrient.
          ! Growth is also further decreased when the food quality is poor. This is currently
          ! hard coded : it can be decreased by up to 50% (zepsherq)
-         ! GGE can also be decreased when food quantity is high, zepsherf (Montagnes and 
+         ! GGE can also be decreased when food quantity is high, zepsherf (Montagnes and
          ! Fulton, 2012)
          ! -----------------------------------------------------------------------------
          zgrasrat  = ( zgraztotf + rtrn ) / ( zgraztotc + rtrn )  ! Jorn: Fe : C ratio in ingested prey
@@ -282,9 +282,9 @@ contains
          zbeta     = MAX(0._rk, (self%epsher - self%epshermin) )
          zepsherf  = self%epshermin + zbeta / ( 1.0_rk + 0.04E6_rk * 12._rk * zfood * zbeta )
          zepsherq  = 0.5_rk + (1.0_rk - 0.5_rk) * zepshert * ( 1.0_rk + 1.0_rk ) / ( zepshert + 1.0_rk )
-         zepsherv  = zepsherf * zepshert * zepsherq   ! Jorn: gross growth efficiency 
+         zepsherv  = zepsherf * zepshert * zepsherq   ! Jorn: gross growth efficiency
 
-!         zgrafer   = zgraztotc * MAX( 0._rk , ( 1._rk - self%unass ) * zgrasrat - self%ferat * zepsherv ) 
+!         zgrafer   = zgraztotc * MAX( 0._rk , ( 1._rk - self%unass ) * zgrasrat - self%ferat * zepsherv )
          zgrafer   = ( 1._rk - self%unass ) * zgraztotf - self%ferat * zepsherv * zgraztotc &  ! Jorn: total dissolved Fe waste (organic + inorganic). TODO: revert to original eq above? non-conservative!
          &         + self%ferat * self%xdismort * ztortz ! Jorn: Eq30b. this line for mesozoo only (xdismort=0 otherwise), ztortz is quadratic mortality
          zgrarem   = zgraztotc * ( 1._rk - zepsherv - self%unass ) &   ! Jorn: total dissolved C/N/P waste (organic + inorganic)

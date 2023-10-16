@@ -141,9 +141,9 @@ contains
       call par_model%request_coupling(par_model%id_pe2, '../pe2')
       call par_model%request_coupling(par_model%id_pe3, '../pe3')
 
-      call self%register_state_variable(self%id_c, 'c', 'mol C L-1', 'carbon')
-      call self%register_state_variable(self%id_ch, 'ch', 'g Chl L-1', 'chlorophyll')
-      call self%register_state_variable(self%id_fe, 'fe', 'mol Fe L-1', 'iron')
+      call self%register_state_variable(self%id_c, 'c', 'mol C L-1', 'carbon', minimum=0.0_rk)
+      call self%register_state_variable(self%id_ch, 'ch', 'g Chl L-1', 'chlorophyll', minimum=0.0_rk)
+      call self%register_state_variable(self%id_fe, 'fe', 'mol Fe L-1', 'iron', minimum=0.0_rk)
       call self%add_to_aggregate_variable(standard_variables%total_carbon, self%id_c, scale_factor=1e6_rk)
       call self%add_to_aggregate_variable(standard_variables%total_nitrogen, self%id_c, scale_factor=rno3 * 1e6_rk)
       call self%add_to_aggregate_variable(standard_variables%total_phosphorus, self%id_c, scale_factor=po4r * 1e6_rk)
@@ -151,7 +151,7 @@ contains
       call self%add_to_aggregate_variable(total_chlorophyll, self%id_ch, scale_factor=1e6_rk)
 
       if (self%diatom) then
-         call self%register_state_variable(self%id_si, 'si', 'mol Si L-1', 'silicon')
+         call self%register_state_variable(self%id_si, 'si', 'mol Si L-1', 'silicon', minimum=0.0_rk)
          call self%add_to_aggregate_variable(standard_variables%total_silicate, self%id_si, scale_factor=1e6_rk)
       end if
 
@@ -283,9 +283,9 @@ contains
       _DECLARE_ARGUMENTS_DO_
 
       ! Coefficient for iron limitation - Jorn Eq 20
-      real(rk), parameter ::  xcoef1   = 0.0016  / 55.85  
+      real(rk), parameter ::  xcoef1   = 0.0016  / 55.85
       real(rk), parameter ::  xcoef2   = 1.21E-5 * 14. / 55.85 / 7.625 * 0.5 * 1.5
-      real(rk), parameter ::  xcoef3   = 1.15E-4 * 14. / 55.85 / 7.625 * 0.5 
+      real(rk), parameter ::  xcoef3   = 1.15E-4 * 14. / 55.85 / 7.625 * 0.5
 
       real(rk) :: c, ch, fe, si
       real(rk) :: nh4, no3, po4, biron, sil
@@ -383,7 +383,7 @@ contains
             ENDIF
             zmxl_chl = zval / 24._rk  ! Jorn: from number of hours to fraction of day
             !zmxl_fac = 1.5_rk * zval / ( 12._rk + zval )  ! Jorn: Eq 3a in PISCES-v2 paper - but note that time spent in euphotic layer has already been incorporated in zval! Eqs 3b-3d are not used
-            zmxl_fac = self%fpday * zval / ( 12._rk + zval )  ! AC 07.12.2021 - fpday as parameter 
+            zmxl_fac = self%fpday * zval / ( 12._rk + zval )  ! AC 07.12.2021 - fpday as parameter
 
             zpr = zprmax * zmxl_fac  ! Jorn: product of muP and f1*f2 (sort of - those have been changed) in Eq 2a, units are 1/s
 
@@ -435,11 +435,11 @@ contains
                zysopt = 0._rk
             ENDIF
 
-            !  Mixed-layer effect on production 
+            !  Mixed-layer effect on production
             !  Sea-ice effect on production
             zpr = zpr * ( 1._rk - fr_i )   ! Jorn: production was computed using PAR in ice-free water; here that is converted into production over the entire cell (ice-free + ice-covered fractions)
 
-            ! Computation of the various production terms 
+            ! Computation of the various production terms
             zprorca = zpr  * xlim* c                           ! total production (mol C/L/s), dropped multiplication with rfact2 [time step in seconds]
             zpronew  = zprorca* xno3 / ( xno3 + xnh4 + rtrn )  ! Eq 8, new production (mol C/L/s)
             !
@@ -524,17 +524,17 @@ contains
        !   CALL iom_put( "TPNEW"   , ( zpronewn(:,:,:) + zpronewd(:,:,:) ) * zfact * tmask(:,:,:)  ) ! total new production
        !   CALL iom_put( "TPBFE"   , ( zprofen(:,:,:) + zprofed(:,:,:) ) * zfact * tmask(:,:,:)  )  ! total biogenic iron production
        !   CALL iom_put( "tintpp"  , tpp * zfact )  !  global total integrated primary production molC/s
-       !ENDIF   
+       !ENDIF
 
          if (self%calcify) then
             ! Jorn: from p4zlim.F90, Eq 77
             zlim1 =  ( no3 * self%concnh4 + nh4 * self%concno3 )    &
-               &   / ( self%concno3 * self%concnh4 + self%concnh4 * no3 + self%concno3 * nh4 ) 
+               &   / ( self%concno3 * self%concnh4 + self%concnh4 * no3 + self%concno3 * nh4 )
             zlim2  = po4 / ( po4 + self%concnh4 )
             zlim3  = fe / ( fe +  5.E-11_rk   )   ! iron half saturation hardcoded at 0.05 nmol/L (much lower than 1-3 nmol/L used for nanophytoplankotn and diatoms!)
             ztem1  = MAX( 0._rk, tem )
             ztem2  = tem - 10._rk
-            zetot1 = MAX( 0._rk, etot_ndcy - 1._rk) / ( 4._rk + etot_ndcy ) 
+            zetot1 = MAX( 0._rk, etot_ndcy - 1._rk) / ( 4._rk + etot_ndcy )
             zetot2 = 30._rk / ( 30._rk + etot_ndcy )
 
             xfracal = self%caco3r * MIN( zlim1, zlim2, zlim3 )                  &
@@ -565,7 +565,7 @@ contains
          zlim2   = xlim * xlim
          zlim1   = 0.25_rk * ( 1._rk - zlim2 ) / ( 0.25_rk + zlim2 )    ! Jorn: seems to have replaced Eq 13
 
-         !     When highly limited by macronutrients, very small cells 
+         !     When highly limited by macronutrients, very small cells
          !     dominate the community. As a consequence, aggregation
          !     due to turbulence is negligible. Mortality is also set
          !     to 0
