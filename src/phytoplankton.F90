@@ -12,7 +12,7 @@ module pisces_phytoplankton
    private
 
    type, extends(type_particle_model), public :: type_pisces_phytoplankton
-      type (type_state_variable_id)     :: id_c, id_ch, id_fe, id_si
+      type (type_state_variable_id)     :: id_c, id_ch, id_fe, id_si, id_fer
       type (type_state_variable_id)     :: id_no3, id_nh4, id_po4, id_sil, id_biron, id_doc, id_dic, id_tal, id_oxy
       type (type_state_variable_id)     :: id_poc, id_sfe, id_goc, id_gsi, id_bfe, id_cal, id_prodpoc, id_prodgoc
       type (type_dependency_id)         :: id_tem, id_gdept_n, id_xdiss
@@ -204,6 +204,8 @@ contains
       call self%register_state_dependency(self%id_tal, standard_variables%alkalinity_expressed_as_mole_equivalent)
       call self%register_state_dependency(self%id_oxy, 'oxy', 'mol O2 L-1', 'oxygen')
 
+      if (self%calcify) call self%register_state_dependency(self%id_fer, 'fer', 'mol Fe L-1', 'iron')
+
       if (self%diatom) then
          call self%register_dependency(self%id_gphit, standard_variables%latitude)
          call self%register_dependency(self%id_xksi_, 'xksi', 'mol Si L-1', 'instantaneous silicate half-saturation constant')
@@ -265,7 +267,7 @@ contains
          _GET_(self%id_pe2, pe2)     ! daily mean PAR in green waveband
          _GET_(self%id_pe3, pe3)     ! daily mean PAR in red waveband
          _GET_(self%id_e3t_n, e3t_n) ! cell thickness
-         etot = self%beta1 * pe1 + self%beta2 * pe2 + self%beta2 * pe2   ! Eq 5b, daily mean PAR weighted by waveband-specific absorption
+         etot = self%beta1 * pe1 + self%beta2 * pe2 + self%beta3 * pe3   ! Eq 5b, daily mean PAR weighted by waveband-specific absorption
          _SET_DIAGNOSTIC_(self%id_etot, etot)
          gdepw_n = gdepw_n + e3t_n
          IF (gdepw_n <= MIN(hmld, heup_01)) THEN
@@ -287,7 +289,7 @@ contains
       real(rk), parameter ::  xcoef2   = 1.21E-5 * 14. / 55.85 / 7.625 * 0.5 * 1.5
       real(rk), parameter ::  xcoef3   = 1.15E-4 * 14. / 55.85 / 7.625 * 0.5
 
-      real(rk) :: c, ch, fe, si
+      real(rk) :: c, ch, fe, si, fer
       real(rk) :: nh4, no3, po4, biron, sil
       real(rk) :: tem, gdept_n, zstrn, hmld, heup_01, etot_ndcy, etot_w, etot_wm, gphit, fr_i
       real(rk) :: tgfunc, zconc, zconc2, z1_trb, concfe, zconcno3, zconcnh4, zdenom, xno3, xnh4, xpo4, zlim1, zlim2, xlim, xlimsi
@@ -311,6 +313,7 @@ contains
          _GET_(self%id_po4, po4)                  ! phosphate (mol C/L - phosphorus units multiplied with C:P ratio of biomass)
          _GET_(self%id_biron, biron)              ! bioavailable iron (mol Fe/L)
          _GET_(self%id_sil, sil)                  ! ambient silicate concentration (mol Si/L)
+         if (self%calcify) _GET_(self%id_fer,  fer)                 ! ambient iron concentration (mol Fe/L)
 
          _GET_(self%id_tem, tem)                  ! temperature (degrees Celsius)
          _GET_(self%id_gdept_n, gdept_n)          ! depth (m)
@@ -531,7 +534,7 @@ contains
             zlim1 =  ( no3 * self%concnh4 + nh4 * self%concno3 )    &
                &   / ( self%concno3 * self%concnh4 + self%concnh4 * no3 + self%concno3 * nh4 )
             zlim2  = po4 / ( po4 + self%concnh4 )
-            zlim3  = fe / ( fe +  5.E-11_rk   )   ! iron half saturation hardcoded at 0.05 nmol/L (much lower than 1-3 nmol/L used for nanophytoplankotn and diatoms!)
+            zlim3  = fer / ( fer +  5.E-11_rk   )   ! iron half saturation hardcoded at 0.05 nmol/L (much lower than 1-3 nmol/L used for nanophytoplankotn and diatoms!)
             ztem1  = MAX( 0._rk, tem )
             ztem2  = tem - 10._rk
             zetot1 = MAX( 0._rk, etot_ndcy - 1._rk) / ( 4._rk + etot_ndcy )

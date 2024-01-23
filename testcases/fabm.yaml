@@ -96,6 +96,7 @@ instances:
       nh4: nh4/c
       po4: po4/c
       biron: fer/fe
+      fer: fer/fe
       doc: dom/c
       oxy: oxy/O2
       heup_01: optics/heup_01
@@ -123,6 +124,7 @@ instances:
       concfer: 3.e-9
       chlcm: 0.05
       xmort: 1e-9
+      wchlm: 0.03
     coupling:
       no3: no3/c
       nh4: nh4/c
@@ -171,7 +173,7 @@ instances:
       xdismort: 0
       grazrat: 3
       grazflux: 0
-      phlim: 0
+      phlim: 1
       mzrat: 0.004
       resrat: 0.03
       part: 0.5
@@ -204,7 +206,7 @@ instances:
       xprefz: 1
       grazrat: 0.75
       grazflux: 3e3
-      phlim: 1
+      phlim: 0
       mzrat: 0.03
       resrat: 0.005
       part: 0.75
