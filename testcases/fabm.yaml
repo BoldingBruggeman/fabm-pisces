@@ -131,7 +131,6 @@ instances:
       po4: po4/c
       sil: sil/si
       biron: fer/fe
-      fer: fer/fe
       doc: dom/c
       oxy: oxy/O2
       heup_01: optics/heup_01

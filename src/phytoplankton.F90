@@ -204,7 +204,7 @@ contains
       call self%register_state_dependency(self%id_tal, standard_variables%alkalinity_expressed_as_mole_equivalent)
       call self%register_state_dependency(self%id_oxy, 'oxy', 'mol O2 L-1', 'oxygen')
 
-      call self%register_state_dependency(self%id_fer, 'fer', 'mol Fe L-1', 'iron')
+      if (self%calcify) call self%register_state_dependency(self%id_fer, 'fer', 'mol Fe L-1', 'iron')
 
       if (self%diatom) then
          call self%register_dependency(self%id_gphit, standard_variables%latitude)
@@ -313,7 +313,7 @@ contains
          _GET_(self%id_po4, po4)                  ! phosphate (mol C/L - phosphorus units multiplied with C:P ratio of biomass)
          _GET_(self%id_biron, biron)              ! bioavailable iron (mol Fe/L)
          _GET_(self%id_sil, sil)                  ! ambient silicate concentration (mol Si/L)
-         _GET_(self%id_fer,  fer)                 ! ambient iron concentration (mol Fe/L)
+         if (self%calcify) _GET_(self%id_fer,  fer)                 ! ambient iron concentration (mol Fe/L)
 
          _GET_(self%id_tem, tem)                  ! temperature (degrees Celsius)
          _GET_(self%id_gdept_n, gdept_n)          ! depth (m)
