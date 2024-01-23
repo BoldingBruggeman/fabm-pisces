@@ -267,7 +267,7 @@ contains
          _GET_(self%id_pe2, pe2)     ! daily mean PAR in green waveband
          _GET_(self%id_pe3, pe3)     ! daily mean PAR in red waveband
          _GET_(self%id_e3t_n, e3t_n) ! cell thickness
-         etot = self%beta1 * pe1 + self%beta2 * pe2 + self%beta2 * pe2   ! Eq 5b, daily mean PAR weighted by waveband-specific absorption
+         etot = self%beta1 * pe1 + self%beta2 * pe2 + self%beta3 * pe3   ! Eq 5b, daily mean PAR weighted by waveband-specific absorption
          _SET_DIAGNOSTIC_(self%id_etot, etot)
          gdepw_n = gdepw_n + e3t_n
          IF (gdepw_n <= MIN(hmld, heup_01)) THEN
