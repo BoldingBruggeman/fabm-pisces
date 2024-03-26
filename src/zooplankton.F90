@@ -17,7 +17,7 @@ module pisces_zooplankton
       type (type_state_variable_id) :: id_po4, id_no3, id_nh4, id_doc, id_dic, id_tal, id_poc_waste, id_pof_waste, id_pos_waste, id_cal
       type (type_state_variable_id) :: id_conspoc, id_consgoc, id_prodpoc, id_poc_waste_prod
       type (type_dependency_id)     :: id_tem, id_nitrfac, id_quotan, id_quotad, id_xfracal, id_wspoc, id_wsgoc
-      type (type_diagnostic_variable_id) :: id_zfezoo, id_zgrazing, id_zfrac, id_pcal
+      type (type_diagnostic_variable_id) :: id_zfezoo, id_zgrazing, id_zfrac, id_pcal, id_prod
 
       real(rk) :: grazrat, logbz, resrat, xkmort, mzrat, xthresh, xkgraz, ferat, epsher, epshermin, unass, sigma, part, grazflux
       real(rk) :: xthreshdia, xthreshphy, xthreshzoo, xthreshpoc
@@ -75,6 +75,8 @@ contains
       call self%register_diagnostic_variable(self%id_zfrac, 'zfrac', 'mol C m-3 s-1', 'fractionation of large POM')
       call self%register_diagnostic_variable(self%id_pcal, 'pcal', 'mol m-3 s-1', 'calcite production')
       call self%add_to_aggregate_variable(calcite_production, self%id_pcal)
+      call self%register_diagnostic_variable(self%id_prod, 'prod', 'mol C m-3 s-1', 'gross production')
+      call self%add_to_aggregate_variable(zooplankton_production, self%id_prod)
 
       call self%register_state_dependency(self%id_no3, 'no3', 'mol C L-1', 'nitrate')
       call self%register_state_dependency(self%id_nh4, 'nh4', 'mol C L-1', 'ammonium')
@@ -200,7 +202,7 @@ contains
          _GET_(self%id_quotan, quotan)
          _GET_(self%id_quotad, quotad)
          _GET_(self%id_xfracal, xfracal)
-         zcompadi  = MIN( MAX( ( dia - self%xthreshdia ), 0.e0_rk ), self%xsizedia )  ! Jorn: xsizedia = 0 for mesozoo
+         zcompadi  = MIN( MAX( ( dia - self%xthreshdia ), 0.e0_rk ), self%xsizedia )  ! Jorn: xsizedia = "huge" for mesozoo
          zcompaph  = MAX( ( phy - self%xthreshphy ), 0.e0_rk )
          zcompapoc = MAX( ( poc - self%xthreshpoc ), 0.e0_rk )
          zcompaz   = MAX( ( zoo - self%xthreshzoo ), 0.e0_rk )
@@ -314,6 +316,7 @@ contains
          zmortz = ztortz + zrespz
          zmortzgoc = (1._rk - self%xdismort) * ztortz + zrespz  ! Jorn: Eq 30a: mortality directed to POM pool (as opposed to dissolved pools). TODO! this currently also includes the biomass that goes into the HTLs!
          ! Jorn: separated own biomass, prey, waste, fractionation
+         _SET_DIAGNOSTIC_(self%id_prod, zepsherv * zgraztotc * 1e3_rk)
          _ADD_SOURCE_(self%id_c, - zmortz + zepsherv * zgraztotc )
 
          ! Prey losses
