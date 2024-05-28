@@ -54,7 +54,7 @@ contains
          ! Jorn: from p4zlys.F90, Eq 78, 79
          ! SET DEGREE OF UNDER-/SUPERSATURATION
          excess = 1._rk - zomegaca
-         zexcess0 = MAX( 0., excess )
+         zexcess0 = MAX( 0._rk, excess )
          zexcess  = zexcess0**self%nca
 
          ! AMOUNT CACO3 (12C) THAT RE-ENTERS SOLUTION

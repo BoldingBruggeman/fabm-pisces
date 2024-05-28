@@ -129,7 +129,7 @@ contains
          _GET_(self%id_e3t_n, e3t_n)
 
          zchl = ( zchl3d + rtrn )                         ! dropped multiplication with 1.e6 as standard variable is already in mg/m3 = ug/L
-         zchl = MIN(  10. , MAX( 0.05, zchl )  )
+         zchl = MIN(  10._rk , MAX( 0.05_rk, zchl )  )
          irgb = NINT( 41 + 20.* LOG10( zchl ) + rtrn )    ! determine index into R-G-B specifc attenuation coefficients based on total chlorophyll
 
          ! Jorn: ensure index is valid even if zchl is non-finite to prevent crashes due to out-of-bounds rkrgb access

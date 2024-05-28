@@ -107,7 +107,7 @@ contains
          fekeq  = 10**( 17.27 - 1565.7 / ztkel )
 
          ! Liu and Millero (1999) only valid 5 - 50 degC
-         ztkel1 = MAX( 5. , tempis ) + 273.16
+         ztkel1 = MAX( 5._rk , tempis ) + 273.16
          fesol(1) = 10**(-13.486 - 0.1856* zis**0.5 + 0.3073*zis + 5254.0/ztkel1)
          fesol(2) = 10**(2.517 - 0.8885*zis**0.5 + 0.2139 * zis - 1320.0/ztkel1 )
          fesol(3) = 10**(0.4511 - 0.3305*zis**0.5 - 1996.0/ztkel1 )
@@ -119,7 +119,7 @@ contains
          ! -------------------------------------------------
          IF( ln_ligvar ) THEN
             ztotlig =  0.09 * doc * 1E6 + self%ligand * 1E9    ! Jorn: Eq 67 (note max operator in that Eq has no effect)
-            ztotlig =  MIN( ztotlig, 10. )
+            ztotlig =  MIN( ztotlig, 10._rk )
          ELSE
            IF( ln_ligand ) THEN  ;   !ztotlig = lgw * 1E9      ! Jorn: TODO
            ELSE                  ;   ztotlig = self%ligand * 1E9
@@ -140,7 +140,7 @@ contains
             &              + SQRT( ( 1. + zfesatur * zkeq - zkeq * ztfe )**2       &
             &              + 4. * ztfe * zkeq) ) / ( 2. * zkeq )    ! Jorn: Eq 65
          zFe3 = zFe3 * 1E9                    ! Jorn: free inorganic iron (nmol/L)
-         zFeL1 = MAX( 0., fer * 1E9 - zFe3 )  ! Jorn: "complexed" iron (nmol/L)
+         zFeL1 = MAX( 0._rk, fer * 1E9 - zFe3 )  ! Jorn: "complexed" iron (nmol/L)
          _SET_DIAGNOSTIC_(self%id_Fe3, zFe3)
          _SET_DIAGNOSTIC_(self%id_FeL1, zFeL1)
          _SET_DIAGNOSTIC_(self%id_zTL1, zTL1)
@@ -157,11 +157,11 @@ contains
          zfeequi = zFe3 * 1E-9
          zfecoll = 0.5 * zFeL1 * 1E-9   ! Jorn: Eq 66
          ! precipitation of Fe3+, creation of nanoparticles
-         precip = MAX( 0., ( zFe3 * 1E-9 - fe3sol ) ) * self%kfep * xstep   ! Jorn: replaces Eq 62?
+         precip = MAX( 0._rk, ( zFe3 * 1E-9 - fe3sol ) ) * self%kfep * xstep   ! Jorn: replaces Eq 62?
          !
          ztrc   = ( poc + goc + cal + gsi ) * 1.e6 
          IF (ln_ligand) THEN
-            zxlam  = self%xlam1 * MAX( 1.E-3, EXP(-2 * etot / 10. ) * (1. - EXP(-2 * oxy / 100.E-6 ) ))
+            zxlam  = self%xlam1 * MAX( 1.E-3_rk, EXP(-2 * etot / 10. ) * (1. - EXP(-2 * oxy / 100.E-6 ) ))
          ELSE
             zxlam  = self%xlam1 * 1.0
          ENDIF
@@ -177,9 +177,9 @@ contains
          !  Increased scavenging for very high iron concentrations found near the coasts 
          !  due to increased lithogenic particles and let say it is unknown processes (precipitation, ...)
          !  -----------------------------------------------------------
-         zlamfac = MAX( 0.e0, ( gphit + 55.) / 30. )
-         zlamfac = MIN( 1.  , zlamfac )
-         zdep    = MIN( 1., 1000. / gdept_n )
+         zlamfac = MAX( 0.e0_rk, ( gphit + 55.) / 30. )
+         zlamfac = MIN( 1._rk  , zlamfac )
+         zdep    = MIN( 1._rk, 1000. / gdept_n )
          zcoag   = 1E-4 * ( 1. - zlamfac ) * zdep * xstep * fer
 
          !  Compute the coagulation of colloidal iron. This parameterization 

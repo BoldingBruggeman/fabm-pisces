@@ -217,7 +217,7 @@ contains
          ! Grazing
          ! ----------------------------------
          zfood     = self%xprefn * zcompaph + self%xprefc * zcompapoc + self%xprefd * zcompadi + self%xprefz * zcompaz   ! Jorn: 1st term in Eq 26a
-         zfoodlim  = MAX( 0. , zfood - min(self%xthresh, 0.5_rk * zfood) )                                               ! Jorn: 2nd term in Eq 26a
+         zfoodlim  = MAX( 0._rk , zfood - min(self%xthresh, 0.5_rk * zfood) )                                               ! Jorn: 2nd term in Eq 26a
          zdenom    = zfoodlim / ( self%xkgraz + zfoodlim )
          zdenom2   = zdenom / ( zfood + rtrn )
          zgraze    = self%grazrat * xstep * tgfunc2 * c * (1. - nitrfac)    ! Jorn: compared to paper (Eq 26a), (1._rk - nitrfac) factor seems to have been added

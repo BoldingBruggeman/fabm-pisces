@@ -129,7 +129,7 @@ contains
          ! denitrification factor computed from NO3 levels
          nitrfac2 = MAX( 0.e0_rk,       ( 1.E-6_rk - no3 )  &
             &                                / ( 1.E-6_rk + no3 ) )
-         nitrfac2 = MIN( 1., nitrfac2 )
+         nitrfac2 = MIN( 1._rk, nitrfac2 )
 
          ! Jorn: from p4zrem.F90
          ! DOC ammonification. Depends on depth, phytoplankton biomass

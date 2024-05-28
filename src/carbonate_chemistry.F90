@@ -352,7 +352,7 @@ contains
          zfact    = rhop / 1000._rk
 
          ! from p4zflx.F90
-         zph   = MAX( hi, 1.e-10 ) / zfact
+         zph   = MAX( hi, 1.e-10_rk ) / zfact
          zh2co3 = dic/(1. + ak13/zph + ak13*ak23/zph**2)
          _SET_DIAGNOSTIC_(self%id_zh2co3, zh2co3)
 

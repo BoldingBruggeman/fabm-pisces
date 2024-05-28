@@ -362,9 +362,9 @@ contains
          end if
          zratio   = fe* z1_trb  ! Jorn: iron quota (based on internal iron pool, not ambient concentration!), mol Fe/mol C
          zironmin = xcoef1 * ch * z1_trb + xcoef2 * zlim1 + xcoef3 * xno3  ! Eq 20, mol Fe/mol C
-         zlim4    = MAX( 0.,( zratio - zironmin ) / self%qfelim )   ! Jorn Eq 6f, iron limitation (dimensionless)
+         zlim4    = MAX( 0._rk,( zratio - zironmin ) / self%qfelim )   ! Jorn Eq 6f, iron limitation (dimensionless)
          xpo4 = zlim2
-         xlimfe = MIN( 1., zlim4 )
+         xlimfe = MIN( 1._rk, zlim4 )
          xlim = MIN( zlim1, zlim2, zlim3, zlim4 )   ! Jorn: Eq 11a, combined N, P, (Si), Fe limitation factor (dimensionless)
          xlimsi = MIN( zlim1, zlim2, zlim4 )        ! Jorn: Eq 6a (also part of Eq 23a): combined limitation by all nutrients (N, P, Fe) EXCEPT Si (dimensionless)
          ! ======================================================================================
@@ -380,7 +380,7 @@ contains
 
          ! Impact of the day duration and light intermittency on phytoplankton growth
          IF( etot_ndcy > 1.E-3 ) THEN
-            zval = MAX( 1., zstrn )   ! Jorn: clip day length to a minimum of 1 hour
+            zval = MAX( 1._rk, zstrn )   ! Jorn: clip day length to a minimum of 1 hour
             IF( gdept_n <= hmld ) THEN
                zval = zval * MIN(1._rk, heup_01 / ( hmld + rtrn ))   ! Jorn: when in mixing layer, multiply with fraction of time spent in euphotic depth; it seems to be an easier-to-understand substitute for Eq 3b-3d
             ENDIF
@@ -415,7 +415,7 @@ contains
             !  ---------------------------------------
             zval = MIN( xpo4, ( xnh4 + xno3 ) )   &    ! Jorn: nitrogen and phosphate limitation, divided by light limitation
             &      * zprmax / ( zpr + rtrn )
-            quota = MIN( 1., 0.2_rk + 0.8_rk * zval )
+            quota = MIN( 1._rk, 0.2_rk + 0.8_rk * zval )
 
             IF( self%diatom ) THEN
                _GET_SURFACE_(self%id_gphit, gphit)
@@ -447,7 +447,7 @@ contains
             zpronew  = zprorca* xno3 / ( xno3 + xnh4 + rtrn )  ! Eq 8, new production (mol C/L/s)
             !
             zratio = fe / ( c * self%fecm + rtrn )   ! Jorn: internal iron pool relative to maximum value (dimensionless)
-            zmax   = MAX( 0., ( 1._rk - zratio ) / ABS( 1.05_rk - zratio ) )            ! ratio in Eq 17 (dimensionless)
+            zmax   = MAX( 0._rk, ( 1._rk - zratio ) / ABS( 1.05_rk - zratio ) )            ! ratio in Eq 17 (dimensionless)
             zprofe = self%fecm * zprmax * ( 1.0 - fr_i )  &                             ! Increase in internal iron pool in mol Fe/L/s
             &             * ( 4._rk - 4.5_rk * xlimfe / ( xlimfe + 0.5_rk ) )    &      ! Eq 19, note xlimfe is based on internal iron quota (not ambient concentration)
             &             * biron / ( biron + concfe )  &                               ! Eq 18a
@@ -545,7 +545,7 @@ contains
                &                  * MAX( 1._rk, c * 1.e6_rk / 2._rk )  &
                &                  * zetot1 * zetot2               &
                &                  * ( 1._rk + EXP(-ztem2 * ztem2 / 25._rk ) )         &
-               &                  * MIN( 1., 50._rk / ( hmld + rtrn ) )
+               &                  * MIN( 1._rk, 50._rk / ( hmld + rtrn ) )
             xfracal = MIN( 0.8_rk , xfracal )
             xfracal = MAX( 0.02_rk, xfracal )
             _SET_DIAGNOSTIC_(self%id_xfracal, xfracal)

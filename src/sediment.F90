@@ -92,9 +92,9 @@ contains
          _GET_(self%id_nitrfac, nitrfac)
 
          zflx = cflux * 1E3 / 1E4 * rday   ! Jorn: flux should be umol cm-2 d-1
-         zflx  = LOG10( MAX( 1E-3, zflx ) )
-         zo2   = LOG10( MAX( 10. , oxy * 1E6 ) )
-         zno3  = LOG10( MAX( 1.  , no3 * 1E6 * rno3 ) )
+         zflx  = LOG10( MAX( 1E-3_rk, zflx ) )
+         zo2   = LOG10( MAX( 10._rk , oxy * 1E6 ) )
+         zno3  = LOG10( MAX( 1._rk  , no3 * 1E6 * rno3 ) )
          zdep  = LOG10( gdepw_n )
          zdenit2d = -2.2567 - 1.185 * zflx - 0.221 * zflx**2 - 0.3995 * zno3 * zo2 + 1.25 * zno3    &
             &                + 0.4721 * zo2 - 0.0996 * zdep + 0.4256 * zflx * zo2                     ! Jorn: Eq 89
@@ -112,8 +112,8 @@ contains
          _GET_(self%id_zomegaca, zomegaca)
          !
          excess = 1._rk - zomegaca
-         zfactcal = MIN( excess, 0.2 )
-         zfactcal = MIN( 1., 1.3 * ( 0.2 - zfactcal ) / ( 0.4 - zfactcal ) )   ! Jorn: Eq 91
+         zfactcal = MIN( excess, 0.2_rk )
+         zfactcal = MIN( 1._rk, 1.3 * ( 0.2 - zfactcal ) / ( 0.4 - zfactcal ) )   ! Jorn: Eq 91
          zrivalk  = self%sedcalfrac * zfactcal
          _ADD_BOTTOM_FLUX_(self%id_tal, + zcaloss * zrivalk * 2.0)
          _ADD_BOTTOM_FLUX_(self%id_dic, + zcaloss * zrivalk)
@@ -121,9 +121,9 @@ contains
          _SET_BOTTOM_DIAGNOSTIC_(self%id_SedSi, (1.0 - zrivsil) * zsiloss * 1.e+3_rk)
 
          ! Jorn: TODO use coast and island mask as in p4zsbc.F90, which introduces an iron flux throughout the water column
-         zexpide   = MIN( 8.,( gdepw_n / 500. )**(-1.5) )                           ! Eq 85a - taken from p4zsbc.F90 but replaced cell center depth with bottom depth
+         zexpide   = MIN( 8._rk,( gdepw_n / 500. )**(-1.5) )                           ! Eq 85a - taken from p4zsbc.F90 but replaced cell center depth with bottom depth
          zdenitide = -0.9543 + 0.7662 * LOG( zexpide ) - 0.235 * LOG( zexpide )**2  ! Eq 85b
-         ironsed = zcmask * MIN( 1., EXP( zdenitide ) / 0.5 )                       ! Eq 85c
+         ironsed = zcmask * MIN( 1._rk, EXP( zdenitide ) / 0.5 )                       ! Eq 85c
          ironsed = self%sedfeinput * ironsed * r1_rday
          _ADD_BOTTOM_FLUX_(self%id_fer, ironsed)
          _SET_BOTTOM_DIAGNOSTIC_(self%id_ironsed, ironsed * 1.e+3_rk)
