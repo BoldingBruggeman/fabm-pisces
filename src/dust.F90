@@ -35,7 +35,7 @@ contains
       call self%get_parameter(self%mfrac, 'mfrac', '1', 'Fe mineral fraction of dust', default=0.035_rk)
       call self%get_parameter(self%wdust, 'wdust', 'm d-1', 'sinking speed of dust', default=2._rk)
 
-      call self%register_dependency(self%id_dustdep, 'dustdep', 'g m-2 s-1', 'dust deposition')
+      call self%register_dependency(self%id_dustdep, 'dustdep', 'kg m-2 s-1', 'dust deposition')
       if (self%ln_solub) call self%register_dependency(self%id_solub, 'solub', '1', 'solubility of iron in dust')
       call self%register_dependency(self%id_gdept_n, standard_variables%depth)
 
@@ -69,6 +69,8 @@ contains
          zirondep = solub  * dust * self%mfrac / 55.85 + 3.e-10 * r1_ryyss   ! Jorn: dropped division by e3t_n because FABM wants flux per m2, dropped multiplication with rfact2 [time step in seconds]
          zsidep  = 8.8 * 0.075 * dust * self%mfrac / 28.1      ! Jorn: 28.1 is atomic mass of Si
          zpdep = 0.1 * 0.021 * dust * self%mfrac / 31. / po4r  ! Jorn: solubility of P in dust is assumed 10%, 31 is atomic mass of P. 0.021 * default mfrac (0.035) approximates the 750 ppm P content of dust given in the paper
+         ! Jorn: note that the 3 fluxes above are in kmol m-2 s-1, since dust is in kg m-2 s-1.
+         ! But since the target tracers are in mol L-1 = kmol m-3, they are exactly the surface flux units we need below
          _ADD_SURFACE_FLUX_(self%id_sil, zsidep)
          _ADD_SURFACE_FLUX_(self%id_po4, zpdep)
          _ADD_SURFACE_FLUX_(self%id_fer, zirondep)
