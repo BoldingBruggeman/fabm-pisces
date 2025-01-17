@@ -94,11 +94,11 @@ contains
       call self%register_implemented_routines((/source_do, source_do_surface/))
 
       call self%register_state_variable(self%id_dic, 'DIC', 'mol C L-1', 'dissolved inorganic carbon concentration', &
-         initial_value=1.99e-3_rk, minimum=0.0_rk, &
+         initial_value=2.312e-3_rk, minimum=0.0_rk, &
          standard_variable=standard_variables%mole_concentration_of_dissolved_inorganic_carbon)
       call self%add_to_aggregate_variable(standard_variables%total_carbon, self%id_dic, scale_factor=1e6_rk)
       call self%register_state_variable(self%id_tal, 'Alkalini', 'mol L-1', 'alkalinity concentration', &
-         initial_value=2.31e-3_rk, minimum=0.0_rk, &
+         initial_value=2.426e-3_rk, minimum=0.0_rk, &
          standard_variable=standard_variables%alkalinity_expressed_as_mole_equivalent)
 
       call self%register_diagnostic_variable(self%id_PH, 'PH', '1', 'pH', standard_variable=standard_variables%ph_reported_on_total_scale)

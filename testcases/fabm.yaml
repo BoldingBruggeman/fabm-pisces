@@ -9,35 +9,35 @@ instances:
     parameters:
       has_nitrogen: true
     initialization:
-      c: 4.4148749999999996e-05
+      c: 0.0002356125
   nh4:
     long_name: ammonium
     model: pisces/tracer
     parameters:
       has_nitrogen: true
     initialization:
-      c: 2.45525e-06
+      c: 1.e-8
   po4:
     long_name: phosphate
     model: pisces/tracer
     parameters:
       has_phosphorus: true
     initialization:
-      c: 7.0394e-05
+      c: 0.00026413
   sil:
     long_name: silicate
     model: pisces/tracer
     parameters:
       has_silicon: true
     initialization:
-      si: 1.07e-7
+      si: 91.51e-6
   fer:
     long_name: iron
     model: pisces/tracer
     parameters:
       has_iron: true
     initialization:
-      fe: 4.06e-10
+      fe: 6.e-10
   dom:
     long_name: dissolved organic matter
     model: pisces/tracer
@@ -46,7 +46,7 @@ instances:
       has_nitrogen: true
       has_phosphorus: true
     initialization:
-      c: 2.04e-5
+      c: 1.e-8
   pom:
     long_name: small particulate organic matter
     model: pisces/pom
@@ -55,8 +55,8 @@ instances:
       solgoc: 0
       mlvar: true
     initialization:
-      c: 1.27e-6
-      fe: 2.51e-11
+      c: 1.e-8
+      fe: 5.e-14
     coupling:
       dom: dom
       fer: fer/fe
@@ -69,10 +69,10 @@ instances:
       has_calcite: true
       ws: 50
     initialization:
-      c: 5.23e-8
-      fe: 9.84e-13
-      si: 1.53e-8
-      cal: 1.04e-8
+      c: 1.e-8
+      fe: 5.e-14
+      si: 5.e-14
+      cal: 1.e-8
     coupling:
       dom: dom
       fer: fer/fe
@@ -108,9 +108,9 @@ instances:
       pom: pom
       gom: gom
     initialization:
-      c: 9.57e-8
-      ch: 1.67e-7
-      fe: 1.76e-11
+      c: 1.e-8
+      ch: 2.1818e-9
+      fe: 5.e-14
   dia:
     long_name: diatoms
     model: pisces/phytoplankton
@@ -142,18 +142,23 @@ instances:
       pom: pom
       gom: gom
     initialization:
-      c: 4.24e-7
-      ch: 1.02e-7
-      si: 1.07e-7
-      fe: 6.57e-12
+      c: 1.e-8
+      ch: 2.1818e-9
+      si: 0.15e-8
+      fe: 5.e-14
   carbonate:
     model: pisces/carbonate_chemistry
     coupling:
       po4: po4/c
       sil: sil/si
+    initialization:
+      DIC: 2.312e-3
+      Alkalini: 2.426e-3
   oxy:
     long_name: oxygen
     model: pisces/oxygen
+    initialization:
+      O2: 177.6e-6
   daylength:
     model: pisces/daylength
   turbocline:
@@ -178,7 +183,7 @@ instances:
       resrat: 0.03
       part: 0.5
     initialization:
-      c: 6.07e-7
+      c: 1.0e-8
     coupling:
       dia: dia
       phy: phy
@@ -190,7 +195,7 @@ instances:
       po4: po4/c
       nh4: nh4/c
       fer: fer/fe
-      oxy: oxy/O2       
+      oxy: oxy/O2
       doc: dom/c
       waste: pom
       pos_waste: gom/si
@@ -212,7 +217,7 @@ instances:
       part: 0.75
       xsizedia: 1
     initialization:
-      c: 3.44e-7
+      c: 1.0e-8
     coupling:
       dia: dia
       phy: phy
@@ -224,7 +229,7 @@ instances:
       po4: po4/c
       nh4: nh4/c
       fer: fer/fe
-      oxy: oxy/O2       
+      oxy: oxy/O2
       doc: dom/c
       waste: gom
   iron_availability:
@@ -244,7 +249,7 @@ instances:
     coupling:
       no3: no3/c
       nh4: nh4/c
-      oxy: oxy/O2       
+      oxy: oxy/O2
       nitrfac: oxy/nitrfac
       emoy: optics/emoy
       etot: optics/etot
@@ -255,7 +260,7 @@ instances:
       nh4: nh4/c
       po4: po4/c
       biron: fer/fe
-      oxy: oxy/O2       
+      oxy: oxy/O2
       dom: dom
       pom: pom
       gom: gom
@@ -271,7 +276,7 @@ instances:
       po4: po4/c
       nh4: nh4/c
       fer: fer/fe
-      oxy: oxy/O2       
+      oxy: oxy/O2
       doc: dom/c
       sfe: pom/fe
       bfe: gom/fe

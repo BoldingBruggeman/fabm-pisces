@@ -33,7 +33,7 @@ contains
 
       call self%get_parameter(self%oxymin, 'oxymin', 'mol O2 L-1', 'half-saturation constant for anoxia', default=1.E-6_rk)
 
-      call self%register_state_variable(self%id_oxy, 'O2', 'mol O2 L-1', 'concentration', initial_value=2.47e-4_rk, minimum=0.0_rk)
+      call self%register_state_variable(self%id_oxy, 'O2', 'mol O2 L-1', 'concentration', initial_value=177.6e-6_rk, minimum=0.0_rk)
       call self%register_diagnostic_variable(self%id_chemo2, 'chemo2', 'mol O2 (L atm)-1', 'solubility')
       call self%register_diagnostic_variable(self%id_nitrfac, 'nitrfac', '1', 'denitrication factor')
       call self%register_diagnostic_variable(self%id_Oflx, 'Oflx', 'mol m-2 s-1', 'air-sea O2 flux')
